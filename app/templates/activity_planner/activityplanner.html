@@ -1,56 +1,145 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="page-header page-header-activities">
-    <h1><i class="fas fa-calendar-alt me-2"></i>Activity Planner</h1>
-    <p>Manage your family activities effortlessly.</p>
-</div>
-
-<div class="text-center mb-4">
-    <a href="#" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#addActivityModal">
-        <i class="fas fa-plus me-1"></i> Add New Activity
-    </a>
-</div>
-
-{% if activities|length == 0 %}
-    <div class="text-center py-4">
-        <p class="text-muted"><i class="fas fa-calendar-alt me-2"></i>No activities scheduled yet.</p>
-    </div>
-{% endif %}
-
-<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
-    {% for activity in activities %}
-    <div class="col">
-        <a href="{{ url_for('activity_planner.activity_details', id=activity.id) }}" class="card-link">
-            <div class="card h-100">
-                <div class="card-header text-center" style="background:var(--activity-bg);">
-                    <strong>{{ activity.activity_title }}</strong>
-                </div>
-                <div class="card-body d-flex flex-column align-items-center text-center gap-1">
-                    <span class="badge badge-activity">
-                        {% if activity.activity_all_day_event %}All Day{% else %}Timed Event{% endif %}
-                    </span>
-                    <small class="text-muted"><i class="fas fa-play me-1"></i>{{ activity.activity_start_date.strftime("%d %b %Y") }}{% if activity.activity_start_time %} at {{ activity.activity_start_time.strftime("%I:%M %p") }}{% endif %}</small>
-                    <small class="text-muted"><i class="fas fa-stop me-1"></i>{{ activity.activity_end_date.strftime("%d %b %Y") }}{% if activity.activity_end_time %} at {{ activity.activity_end_time.strftime("%I:%M %p") }}{% endif %}</small>
-                    <small class="text-muted">
-                        <i class="fas fa-hourglass-half me-1"></i>
-                        {% if activity.activity_all_day_event %}
-                            {{ (activity.activity_end_date - activity.activity_start_date).days + 1 }} days
-                        {% elif activity.activity_start_time and activity.activity_end_time %}
-                            {% set start = activity.activity_start_date.replace(hour=activity.activity_start_time.hour, minute=activity.activity_start_time.minute) %}
-                            {% set end = activity.activity_end_date.replace(hour=activity.activity_end_time.hour, minute=activity.activity_end_time.minute) %}
-                            {% set duration = (end - start).total_seconds() %}
-                            {% if (duration // 86400)|int > 0 %}{{ (duration // 86400)|int }}d {% endif %}{{ ((duration % 86400) // 3600)|int }}h {{ ((duration % 3600) // 60)|int }}m
-                        {% else %}
-                            No specific time set
-                        {% endif %}
-                    </small>
-                </div>
-            </div>
+<!-- Header with view toggle and navigation -->
+<div class="week-planner-header">
+    <div class="week-nav">
+        {% if view == 'week' %}
+        <a href="{{ url_for('activity_planner.activityplanner', week=week_offset - 1) }}" class="week-nav-btn" title="Previous week">
+            <i class="fas fa-chevron-left"></i>
         </a>
+        <div class="week-nav-title">
+            <h1><i class="fas fa-calendar-alt me-2"></i>Activity Planner</h1>
+            <p>{{ week_days[0].strftime('%d %b') }} — {{ week_days[6].strftime('%d %b %Y') }}</p>
+        </div>
+        <a href="{{ url_for('activity_planner.activityplanner', week=week_offset + 1) }}" class="week-nav-btn" title="Next week">
+            <i class="fas fa-chevron-right"></i>
+        </a>
+        {% else %}
+        <a href="{{ url_for('activity_planner.activityplanner', view='month', month=month_offset - 1) }}" class="week-nav-btn" title="Previous month">
+            <i class="fas fa-chevron-left"></i>
+        </a>
+        <div class="week-nav-title">
+            <h1><i class="fas fa-calendar-alt me-2"></i>Activity Planner</h1>
+            <p>{{ '%02d'|format(target_month) }}/{{ target_year }}</p>
+        </div>
+        <a href="{{ url_for('activity_planner.activityplanner', view='month', month=month_offset + 1) }}" class="week-nav-btn" title="Next month">
+            <i class="fas fa-chevron-right"></i>
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- View toggle + reset -->
+    <div class="view-toggle-bar">
+        <div class="view-toggle">
+            <a href="{{ url_for('activity_planner.activityplanner', view='week') }}" class="view-toggle-btn {% if view == 'week' %}active{% endif %}">
+                <i class="fas fa-list me-1"></i> Week
+            </a>
+            <a href="{{ url_for('activity_planner.activityplanner', view='month') }}" class="view-toggle-btn {% if view == 'month' %}active{% endif %}">
+                <i class="fas fa-calendar me-1"></i> Month
+            </a>
+        </div>
+        {% if view == 'week' and week_offset != 0 %}
+        <a href="{{ url_for('activity_planner.activityplanner') }}" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-undo me-1"></i> This week
+        </a>
+        {% elif view == 'month' and month_offset != 0 %}
+        <a href="{{ url_for('activity_planner.activityplanner', view='month') }}" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-undo me-1"></i> This month
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+{% if view == 'week' %}
+<!-- ==================== WEEK VIEW ==================== -->
+<div class="week-planner">
+    {% for day in week_days %}
+    {% set day_activities = activities_by_day.get(day, []) %}
+    <div class="week-day {% if day == today %}week-day-today{% endif %}">
+        <div class="week-day-header">
+            <div class="week-day-label">
+                <span class="week-day-name">{{ day.strftime('%A') }}</span>
+                <span class="week-day-date">{{ day.strftime('%d %b') }}</span>
+            </div>
+            <button class="week-day-add activity-add-btn" data-bs-toggle="modal" data-bs-target="#addActivityModal"
+                    onclick="prefillActivityDate('{{ day.strftime('%Y-%m-%d') }}')" title="Add activity">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
+        <div class="week-day-meals">
+            {% if day_activities %}
+                {% for activity in day_activities %}
+                <a href="{{ url_for('activity_planner.activity_details', id=activity.id) }}" class="meal-row activity-row">
+                    <div class="meal-row-dot activity-row-dot"></div>
+                    <div class="meal-row-info">
+                        <strong>{{ activity.activity_title }}</strong>
+                        <small>
+                            {% if activity.activity_all_day_event %}
+                                All Day
+                            {% elif activity.activity_start_time %}
+                                {{ activity.activity_start_time.strftime("%I:%M %p") }}{% if activity.activity_end_time %} – {{ activity.activity_end_time.strftime("%I:%M %p") }}{% endif %}
+                            {% endif %}
+                            {% if activity.activity_location %} · {{ activity.activity_location|truncate(30) }}{% endif %}
+                        </small>
+                    </div>
+                    <i class="fas fa-chevron-right meal-row-arrow"></i>
+                </a>
+                {% endfor %}
+            {% else %}
+                <div class="week-day-empty">
+                    <span>No activities planned</span>
+                </div>
+            {% endif %}
+        </div>
     </div>
     {% endfor %}
 </div>
+
+{% else %}
+<!-- ==================== MONTH VIEW ==================== -->
+<div class="cal-grid">
+    <div class="cal-header-row">
+        <div class="cal-header-cell">Mon</div>
+        <div class="cal-header-cell">Tue</div>
+        <div class="cal-header-cell">Wed</div>
+        <div class="cal-header-cell">Thu</div>
+        <div class="cal-header-cell">Fri</div>
+        <div class="cal-header-cell">Sat</div>
+        <div class="cal-header-cell">Sun</div>
+    </div>
+    {% for week in month_days %}
+    <div class="cal-week-row">
+        {% for day in week %}
+        {% set day_activities = activities_by_day.get(day, []) %}
+        <div class="cal-day {% if day == today %}cal-day-today{% endif %}{% if day.month != target_month %} cal-day-outside{% endif %}"
+             data-bs-toggle="modal" data-bs-target="#addActivityModal"
+             onclick="prefillActivityDate('{{ day.strftime('%Y-%m-%d') }}')">
+            <div class="cal-day-num">{{ day.day }}</div>
+            {% if day_activities %}
+            <div class="cal-day-meals">
+                {% for activity in day_activities[:3] %}
+                <a href="{{ url_for('activity_planner.activity_details', id=activity.id) }}"
+                   class="cal-event-chip cal-event-activity" onclick="event.stopPropagation();" title="{{ activity.activity_title }}">
+                    <i class="fas fa-calendar-alt"></i> {{ activity.activity_title|truncate(14) }}
+                </a>
+                {% endfor %}
+                {% if day_activities|length > 3 %}
+                <span class="cal-more">+{{ day_activities|length - 3 }} more</span>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Floating Add Button (mobile) -->
+<button class="fab-add fab-add-activity d-lg-none" data-bs-toggle="modal" data-bs-target="#addActivityModal" title="Add activity">
+    <i class="fas fa-plus"></i>
+</button>
 
 <!-- Add Activity Modal -->
 <div class="modal fade" id="addActivityModal" tabindex="-1" aria-labelledby="addActivityModalLabel" aria-hidden="true">
@@ -61,27 +150,27 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="addActivityForm" method="POST" action="{{ url_for('activity_planner.activityplanner') }}">
+                <form id="addActivityForm" method="POST" action="{{ url_for('activity_planner.activityplanner', view=view, week=week_offset if view == 'week' else none, month=month_offset if view == 'month' else none) }}">
                     {{ addactivityform.hidden_tag() }}
                     <div class="mb-3">
                         <label class="form-label">Activity Title *</label>
-                        {{ addactivityform.activity_title(class="form-control") }}
+                        {{ addactivityform.activity_title(class="form-control", placeholder="e.g. Family Park Visit") }}
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Start Date *</label>
-                            {{ addactivityform.activity_start_date(class="form-control") }}
+                            {{ addactivityform.activity_start_date(class="form-control", id="activity_start_date") }}
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">End Date *</label>
-                            {{ addactivityform.activity_end_date(class="form-control") }}
+                            {{ addactivityform.activity_end_date(class="form-control", id="activity_end_date") }}
                         </div>
                     </div>
                     <div class="mb-3 form-check">
-                        {{ addactivityform.activity_all_day_event(class="form-check-input") }}
-                        <label class="form-check-label">All Day Event</label>
+                        {{ addactivityform.activity_all_day_event(class="form-check-input", id="activity_all_day") }}
+                        <label class="form-check-label" for="activity_all_day">All Day Event</label>
                     </div>
-                    <div class="row">
+                    <div id="timeFields" class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Start Time</label>
                             {{ addactivityform.activity_start_time(class="form-control") }}
@@ -92,25 +181,42 @@
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Location</label>
-                        {{ addactivityform.activity_location(class="form-control") }}
+                        <label class="form-label">Location <small class="text-muted">(optional)</small></label>
+                        {{ addactivityform.activity_location(class="form-control", placeholder="e.g. Central Park") }}
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Description</label>
-                        {{ addactivityform.activity_description(class="form-control", rows=3) }}
+                        <label class="form-label">Description <small class="text-muted">(optional)</small></label>
+                        {{ addactivityform.activity_description(class="form-control", rows=2, placeholder="Short description...") }}
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Comments</label>
-                        {{ addactivityform.activity_comments(class="form-control", rows=3) }}
+                        <label class="form-label">Comments <small class="text-muted">(optional)</small></label>
+                        {{ addactivityform.activity_comments(class="form-control", rows=2, placeholder="Any extra notes...") }}
                     </div>
-                    <div class="modal-footer">
-                        <button type="submit" class="btn btn-warning w-100">{{ addactivityform.add_activity.label.text }}</button>
-                        <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal">Close</button>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-warning"><i class="fas fa-plus me-1"></i> Add Activity</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+function prefillActivityDate(dateStr) {
+    document.getElementById('activity_start_date').value = dateStr;
+    document.getElementById('activity_end_date').value = dateStr;
+}
+
+// Toggle time fields based on all-day checkbox
+const allDayCheck = document.getElementById('activity_all_day');
+const timeFields = document.getElementById('timeFields');
+if (allDayCheck) {
+    allDayCheck.addEventListener('change', function() {
+        timeFields.style.display = this.checked ? 'none' : '';
+    });
+    if (allDayCheck.checked) timeFields.style.display = 'none';
+}
+</script>
 
 {% endblock %}

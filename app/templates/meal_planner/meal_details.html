@@ -1,42 +1,60 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="page-header page-header-meals">
-    <h1><i class="fas fa-utensils me-2"></i>Meal Detail</h1>
-</div>
-
 <div class="row justify-content-center">
-    <div class="col-lg-8">
-        <div class="card mb-3">
-            <div class="card-header text-center" style="background:var(--meal-bg);">
-                <h4 class="mb-0" style="color:var(--meal-color);">{{ meal.meal_title }}</h4>
+    <div class="col-lg-7">
+
+        <!-- Back link -->
+        <a href="{{ url_for('meal_planner.mealplanner') }}" class="meal-detail-back">
+            <i class="fas fa-arrow-left me-1"></i> Back to Meal Planner
+        </a>
+
+        <!-- Meal header -->
+        <div class="meal-detail-header">
+            <div class="meal-detail-date">
+                <span class="meal-detail-day-name">{{ meal.meal_date.strftime('%A') }}</span>
+                <span class="meal-detail-day-num">{{ meal.meal_date.strftime('%d %b %Y') }}</span>
             </div>
-            <div class="card-body text-center">
-                <div class="mb-3">
-                    <label class="form-label fw-bold d-block"><i class="fas fa-calendar-day me-1"></i> Date</label>
-                    <p>{{ meal.meal_date.strftime("%d-%m-%Y") }} — {{ meal.meal_date.strftime("%A") }}</p>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-bold d-block"><i class="fas fa-align-left me-1"></i> Description</label>
-                    <p>{% if meal.meal_description %}{{ meal.meal_description }}{% else %}<span class="text-muted">No description available</span>{% endif %}</p>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-bold d-block"><i class="fas fa-book-open me-1"></i> Recipe</label>
-                    <p>{% if meal.meal_source %}{{ meal.meal_source }}{% else %}<span class="text-muted">No recipe available</span>{% endif %}</p>
-                </div>
+            <h1>{{ meal.meal_title }}</h1>
+            <small class="text-muted">Added by {{ meal.user.username }}</small>
+        </div>
+
+        <!-- Details -->
+        <div class="meal-detail-section">
+            <div class="meal-detail-field">
+                <label><i class="fas fa-align-left me-1"></i> Description</label>
+                {% if meal.meal_description %}
+                    <p>{{ meal.meal_description }}</p>
+                {% else %}
+                    <p class="text-muted fst-italic">No description added.</p>
+                {% endif %}
+            </div>
+
+            <div class="meal-detail-field">
+                <label><i class="fas fa-book-open me-1"></i> Recipe Source</label>
+                {% if meal.meal_source %}
+                    <p>{{ meal.meal_source }}</p>
+                {% else %}
+                    <p class="text-muted fst-italic">No recipe source added.</p>
+                {% endif %}
             </div>
         </div>
 
-        <div class="action-bar">
-            <a href="{{ url_for('meal_planner.mealplanner') }}" class="btn btn-outline-primary"><i class="fas fa-arrow-left me-1"></i> Back</a>
-            <a href="#" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#editMealModal"><i class="fas fa-pen me-1"></i> Edit</a>
-            <a href="#" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteMealModal{{ meal.id }}"><i class="fas fa-trash me-1"></i> Delete</a>
+        <!-- Actions -->
+        <div class="meal-detail-actions">
+            <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#editMealModal">
+                <i class="fas fa-pen me-1"></i> Edit
+            </button>
+            <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteMealModal">
+                <i class="fas fa-trash me-1"></i> Delete
+            </button>
         </div>
+
     </div>
 </div>
 
 <!-- Delete Meal Modal -->
-<div class="modal fade" id="deleteMealModal{{ meal.id }}" tabindex="-1" aria-labelledby="deleteMealLabel" aria-hidden="true">
+<div class="modal fade" id="deleteMealModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header modal-header-danger">
@@ -44,8 +62,8 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p>Are you sure you want to delete this meal entry?</p>
-                <strong>{{ meal.meal_date.strftime("%d-%m-%Y") }} — {{ meal.meal_title }}</strong>
+                <p>Are you sure you want to delete this meal?</p>
+                <strong>{{ meal.meal_date.strftime('%d %b %Y') }} — {{ meal.meal_title }}</strong>
                 <form action="{{ url_for('meal_planner.delete_meal', meal_id=meal.id) }}" method="post">
                     <div class="d-flex justify-content-end mt-3">
                         <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancel</button>
@@ -58,15 +76,15 @@
 </div>
 
 <!-- Edit Meal Modal -->
-<div class="modal fade" id="editMealModal" tabindex="-1" aria-labelledby="editMealModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+<div class="modal fade" id="editMealModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header modal-header-meals">
-                <h5 class="modal-title" id="editMealModalLabel"><i class="fas fa-pen me-2"></i>Edit Meal</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title"><i class="fas fa-pen me-2"></i>Edit Meal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form id="editmealform" method="POST" action="{{ url_for('meal_planner.meal_details', meal_id=meal.id) }}">
+                <form method="POST" action="{{ url_for('meal_planner.meal_details', meal_id=meal.id) }}">
                     {{ editmealform.hidden_tag() }}
                     <div class="mb-3">
                         <label for="meal_date" class="form-label">Date *</label>
@@ -78,15 +96,15 @@
                     </div>
                     <div class="mb-3">
                         <label for="meal_description" class="form-label">Description</label>
-                        {{ editmealform.meal_description(class="form-control") }}
+                        {{ editmealform.meal_description(class="form-control", rows="3") }}
                     </div>
                     <div class="mb-3">
-                        <label for="meal_source" class="form-label">Recipe</label>
-                        {{ editmealform.meal_source(class="form-control") }}
+                        <label for="meal_source" class="form-label">Recipe Source</label>
+                        {{ editmealform.meal_source(class="form-control", rows="2") }}
                     </div>
-                    <div class="modal-footer">
-                        <button type="submit" class="btn btn-success w-100">Save Changes</button>
-                        <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal">Close</button>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success"><i class="fas fa-check me-1"></i> Save Changes</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
                     </div>
                 </form>
             </div>

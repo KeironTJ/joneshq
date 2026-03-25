@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Header with month navigation -->
+<div class="week-planner-header">
+    <div class="week-nav">
+        <a href="{{ url_for('main.master_calendar', month=month_offset - 1) }}" class="week-nav-btn" title="Previous month">
+            <i class="fas fa-chevron-left"></i>
+        </a>
+        <div class="week-nav-title">
+            <h1><i class="fas fa-calendar-star me-2"></i>Family Calendar</h1>
+            <p>{{ '%02d'|format(target_month) }}/{{ target_year }}</p>
+        </div>
+        <a href="{{ url_for('main.master_calendar', month=month_offset + 1) }}" class="week-nav-btn" title="Next month">
+            <i class="fas fa-chevron-right"></i>
+        </a>
+    </div>
+    {% if month_offset != 0 %}
+    <a href="{{ url_for('main.master_calendar') }}" class="btn btn-sm btn-outline-primary mt-2">
+        <i class="fas fa-undo me-1"></i> This month
+    </a>
+    {% endif %}
+</div>
+
+<!-- Legend -->
+<div class="cal-legend">
+    <span class="cal-legend-item"><span class="cal-legend-dot cal-legend-dot-meal"></span> Meals</span>
+    <span class="cal-legend-item"><span class="cal-legend-dot cal-legend-dot-activity"></span> Activities</span>
+</div>
+
+<!-- Calendar Grid -->
+<div class="cal-grid">
+    <div class="cal-header-row">
+        <div class="cal-header-cell">Mon</div>
+        <div class="cal-header-cell">Tue</div>
+        <div class="cal-header-cell">Wed</div>
+        <div class="cal-header-cell">Thu</div>
+        <div class="cal-header-cell">Fri</div>
+        <div class="cal-header-cell">Sat</div>
+        <div class="cal-header-cell">Sun</div>
+    </div>
+    {% for week in month_days %}
+    <div class="cal-week-row">
+        {% for day in week %}
+        {% set day_meals = meals_by_day.get(day, []) %}
+        {% set day_activities = activities_by_day.get(day, []) %}
+        <div class="cal-day {% if day == today %}cal-day-today{% endif %}{% if day.month != target_month %} cal-day-outside{% endif %}">
+            <div class="cal-day-num">{{ day.day }}</div>
+
+            {% if day_meals or day_activities %}
+            <div class="cal-day-events">
+                {% for meal in day_meals[:2] %}
+                <a href="{{ url_for('meal_planner.meal_details', meal_id=meal.id) }}" 
+                   class="cal-event-chip cal-event-meal" title="{{ meal.meal_title }}">
+                    <i class="fas fa-utensils"></i> {{ meal.meal_title|truncate(12) }}
+                </a>
+                {% endfor %}
+                {% for act in day_activities[:2] %}
+                <a href="{{ url_for('activity_planner.activity_details', id=act.id) }}" 
+                   class="cal-event-chip cal-event-activity" title="{{ act.activity_title }}">
+                    <i class="fas fa-calendar-alt"></i> {{ act.activity_title|truncate(12) }}
+                </a>
+                {% endfor %}
+                {% set total = day_meals|length + day_activities|length %}
+                {% if total > 4 %}
+                <span class="cal-more">+{{ total - 4 }} more</span>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

@@ -1,39 +1,140 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="page-header page-header-meals">
-    <h1><i class="fas fa-utensils me-2"></i>Meal Planner</h1>
-    <p>Organize meals and recipes for the family.</p>
-</div>
-
-<div class="text-center mb-4">
-    <a href="#" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addMealModal">
-        <i class="fas fa-plus me-1"></i> Add New Meal
-    </a>
-</div>
-
-{% if mealplan|length == 0 %}
-    <div class="text-center py-4">
-        <p class="text-muted"><i class="fas fa-utensils me-2"></i>No meals planned yet.</p>
-    </div>
-{% endif %}
-
-<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
-    {% for meal in mealplan %}
-    <div class="col">
-        <a href="{{ url_for('meal_planner.meal_details', meal_id=meal.id) }}" class="card-link">
-            <div class="card h-100">
-                <div class="card-header text-center" style="background:var(--meal-bg);">
-                    <strong>{{ meal.meal_title }}</strong>
-                </div>
-                <div class="card-body text-center">
-                    <small class="text-muted"><i class="fas fa-calendar-day me-1"></i>{{ meal.meal_date.strftime("%d-%m-%Y") }} — {{ meal.meal_date.strftime("%A") }}</small>
-                </div>
-            </div>
+<!-- Header with view toggle and navigation -->
+<div class="week-planner-header">
+    <div class="week-nav">
+        {% if view == 'week' %}
+        <a href="{{ url_for('meal_planner.mealplanner', week=week_offset - 1) }}" class="week-nav-btn" title="Previous week">
+            <i class="fas fa-chevron-left"></i>
         </a>
+        <div class="week-nav-title">
+            <h1><i class="fas fa-utensils me-2"></i>Meal Planner</h1>
+            <p>{{ week_days[0].strftime('%d %b') }} — {{ week_days[6].strftime('%d %b %Y') }}</p>
+        </div>
+        <a href="{{ url_for('meal_planner.mealplanner', week=week_offset + 1) }}" class="week-nav-btn" title="Next week">
+            <i class="fas fa-chevron-right"></i>
+        </a>
+        {% else %}
+        <a href="{{ url_for('meal_planner.mealplanner', view='month', month=month_offset - 1) }}" class="week-nav-btn" title="Previous month">
+            <i class="fas fa-chevron-left"></i>
+        </a>
+        <div class="week-nav-title">
+            <h1><i class="fas fa-utensils me-2"></i>Meal Planner</h1>
+            <p>{{ '%02d'|format(target_month) }}/{{ target_year }}</p>
+        </div>
+        <a href="{{ url_for('meal_planner.mealplanner', view='month', month=month_offset + 1) }}" class="week-nav-btn" title="Next month">
+            <i class="fas fa-chevron-right"></i>
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- View toggle + reset -->
+    <div class="view-toggle-bar">
+        <div class="view-toggle">
+            <a href="{{ url_for('meal_planner.mealplanner', view='week') }}" class="view-toggle-btn {% if view == 'week' %}active{% endif %}">
+                <i class="fas fa-list me-1"></i> Week
+            </a>
+            <a href="{{ url_for('meal_planner.mealplanner', view='month') }}" class="view-toggle-btn {% if view == 'month' %}active{% endif %}">
+                <i class="fas fa-calendar me-1"></i> Month
+            </a>
+        </div>
+        {% if view == 'week' and week_offset != 0 %}
+        <a href="{{ url_for('meal_planner.mealplanner') }}" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-undo me-1"></i> This week
+        </a>
+        {% elif view == 'month' and month_offset != 0 %}
+        <a href="{{ url_for('meal_planner.mealplanner', view='month') }}" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-undo me-1"></i> This month
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+{% if view == 'week' %}
+<!-- ==================== WEEK VIEW ==================== -->
+<div class="week-planner">
+    {% for day in week_days %}
+    {% set day_meals = meals_by_day.get(day, []) %}
+    <div class="week-day {% if day == today %}week-day-today{% endif %}">
+        <div class="week-day-header">
+            <div class="week-day-label">
+                <span class="week-day-name">{{ day.strftime('%A') }}</span>
+                <span class="week-day-date">{{ day.strftime('%d %b') }}</span>
+            </div>
+            <button class="week-day-add" data-bs-toggle="modal" data-bs-target="#addMealModal" 
+                    onclick="document.getElementById('meal_date').value='{{ day.strftime('%Y-%m-%d') }}'" title="Add meal">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
+        <div class="week-day-meals">
+            {% if day_meals %}
+                {% for meal in day_meals %}
+                <a href="{{ url_for('meal_planner.meal_details', meal_id=meal.id) }}" class="meal-row">
+                    <div class="meal-row-dot"></div>
+                    <div class="meal-row-info">
+                        <strong>{{ meal.meal_title }}</strong>
+                        {% if meal.meal_description %}
+                        <small>{{ meal.meal_description|truncate(60) }}</small>
+                        {% endif %}
+                    </div>
+                    <i class="fas fa-chevron-right meal-row-arrow"></i>
+                </a>
+                {% endfor %}
+            {% else %}
+                <div class="week-day-empty">
+                    <span>No meals planned</span>
+                </div>
+            {% endif %}
+        </div>
     </div>
     {% endfor %}
 </div>
+
+{% else %}
+<!-- ==================== MONTH VIEW ==================== -->
+<div class="cal-grid">
+    <div class="cal-header-row">
+        <div class="cal-header-cell">Mon</div>
+        <div class="cal-header-cell">Tue</div>
+        <div class="cal-header-cell">Wed</div>
+        <div class="cal-header-cell">Thu</div>
+        <div class="cal-header-cell">Fri</div>
+        <div class="cal-header-cell">Sat</div>
+        <div class="cal-header-cell">Sun</div>
+    </div>
+    {% for week in month_days %}
+    <div class="cal-week-row">
+        {% for day in week %}
+        {% set day_meals = meals_by_day.get(day, []) %}
+        <div class="cal-day {% if day == today %}cal-day-today{% endif %}{% if day.month != target_month %} cal-day-outside{% endif %}"
+             data-bs-toggle="modal" data-bs-target="#addMealModal"
+             onclick="document.getElementById('meal_date').value='{{ day.strftime('%Y-%m-%d') }}'">
+            <div class="cal-day-num">{{ day.day }}</div>
+            {% if day_meals %}
+            <div class="cal-day-meals">
+                {% for meal in day_meals[:3] %}
+                <a href="{{ url_for('meal_planner.meal_details', meal_id=meal.id) }}" 
+                   class="cal-meal-chip" onclick="event.stopPropagation();" title="{{ meal.meal_title }}">
+                    <i class="fas fa-utensils"></i> {{ meal.meal_title|truncate(14) }}
+                </a>
+                {% endfor %}
+                {% if day_meals|length > 3 %}
+                <span class="cal-more">+{{ day_meals|length - 3 }} more</span>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Floating Add Button (mobile) -->
+<button class="fab-add d-lg-none" data-bs-toggle="modal" data-bs-target="#addMealModal" title="Add meal">
+    <i class="fas fa-plus"></i>
+</button>
 
 <!-- Add Meal Modal -->
 <div class="modal fade" id="addMealModal" tabindex="-1" aria-labelledby="addMealModalLabel" aria-hidden="true">
@@ -44,27 +145,27 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="addMealForm" method="POST" action="{{ url_for('meal_planner.mealplanner') }}">
+                <form id="addMealForm" method="POST" action="{{ url_for('meal_planner.mealplanner', view=view, week=week_offset if view == 'week' else none, month=month_offset if view == 'month' else none) }}">
                     {{ addMealForm.hidden_tag() }}
                     <div class="mb-3">
-                        <label for="meal_date" class="form-label">Meal Date *</label>
-                        {{ addMealForm.meal_date(class="form-control") }}
+                        <label for="meal_date" class="form-label">Date *</label>
+                        {{ addMealForm.meal_date(class="form-control", id="meal_date") }}
                     </div>
                     <div class="mb-3">
                         <label for="meal_title" class="form-label">Meal Title *</label>
-                        {{ addMealForm.meal_title(class="form-control") }}
+                        {{ addMealForm.meal_title(class="form-control", placeholder="e.g. Spaghetti Bolognese") }}
                     </div>
                     <div class="mb-3">
-                        <label for="meal_description" class="form-label">Description</label>
-                        {{ addMealForm.meal_description(class="form-control") }}
+                        <label for="meal_description" class="form-label">Description <small class="text-muted">(optional)</small></label>
+                        {{ addMealForm.meal_description(class="form-control", rows="2", placeholder="Short notes about the meal...") }}
                     </div>
                     <div class="mb-3">
-                        <label for="meal_source" class="form-label">Recipe Source</label>
-                        {{ addMealForm.meal_source(class="form-control") }}
+                        <label for="meal_source" class="form-label">Recipe Source <small class="text-muted">(optional)</small></label>
+                        {{ addMealForm.meal_source(class="form-control", rows="2", placeholder="Link or book reference...") }}
                     </div>
-                    <div class="modal-footer">
-                        <button type="submit" class="btn btn-success w-100">{{ addMealForm.add_meal.label.text }}</button>
-                        <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal">Close</button>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success"><i class="fas fa-plus me-1"></i> Add Meal</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
                     </div>
                 </form>
             </div>
