@@ -1,49 +1,38 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div>
-    <div class="p-2 shadow text-center mb-4">
-        <h1>Welcome to the Jones HQ Dashboard!</h1>
-        <p class="lead">Manage your family activities effortlessly.</p>
-    </div>
+<div class="page-header page-header-primary">
+    <h1><i class="fas fa-th-large me-2"></i>Dashboard</h1>
+    <p>Manage your family activities effortlessly.</p>
 </div>
 
-<hr class="mb-4">
-
-<div class="container">
-    <div class="row g-4">
-        <div class="col-12">
-            <a href="{{ url_for('chat.familychat') }}" class="card-link text-decoration-none">
-                <div class="card shadow-lg">
-                    <div class="card-body text-center bg-soft-primary">
-                        <h5 class="card-title">💬 Family Chat</h5>
-                        <p class="card-text">Connect with family members in real-time.</p>
-                    </div>
-                </div>
-            </a>
-        </div>
-
-        <div class="col-12">
-            <a href="{{ url_for('meal_planner.mealplanner') }}" class="card-link text-decoration-none">
-                <div class="card shadow-lg">
-                    <div class="card-body text-center bg-green">
-                        <h5 class="card-title">🍽️ Meal Planner</h5>
-                        <p class="card-text">Organize meals and recipes for the family.</p>
-                    </div>
-                </div>
-            </a>
-        </div>
-
-        <div class="col-12">
-            <a href="{{ url_for('activity_planner.activityplanner') }}" class="card-link text-decoration-none">
-                <div class="card shadow-lg">
-                    <div class="card-body text-center bg-soft-beige">
-                        <h5 class="card-title">📅 Activity Planner</h5>
-                        <p class="card-text">Keep track of important family events.</p>
-                    </div>
-                </div>
-            </a>
-        </div>
+<div class="row g-4">
+    <div class="col-md-6 col-lg-4">
+        <a href="{{ url_for('chat.familychat') }}" class="card-link">
+            <div class="card feature-card feature-card-chat h-100">
+                <div class="feature-icon"><i class="fas fa-comments"></i></div>
+                <h5>Family Chat</h5>
+                <p>Connect with family members in real-time.</p>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <a href="{{ url_for('meal_planner.mealplanner') }}" class="card-link">
+            <div class="card feature-card feature-card-meals h-100">
+                <div class="feature-icon"><i class="fas fa-utensils"></i></div>
+                <h5>Meal Planner</h5>
+                <p>Organize meals and recipes for the family.</p>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <a href="{{ url_for('activity_planner.activityplanner') }}" class="card-link">
+            <div class="card feature-card feature-card-activities h-100">
+                <div class="feature-icon"><i class="fas fa-calendar-alt"></i></div>
+                <h5>Activity Planner</h5>
+                <p>Keep track of important family events.</p>
+            </div>
+        </a>
     </div>
 </div>
 

@@ -2,46 +2,65 @@
 
 {% block content %}
 
-<div class="customdiv">
-    <h1>Admin - Messages</h1>
+<!-- Page Header -->
+<div class="page-header-admin">
+    <h1><i class="fa-solid fa-envelope me-2"></i>Admin &mdash; Messages</h1>
+    <p class="mb-0">View and moderate chat messages</p>
 </div>
 
-<div class="customdiv">
-    <h2>View all messages:</h1>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>User ID</th>
-                <th>Content</th>
-                <th>Timestamp</th>
-                <th>Deleted Status</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for message in messages %}
-                <tr>
-                    <td>{{ message.id }}</td>
-                    <td>{{ message.user_id }}</td>
-                    <td>{{ message.content }}</td>
-                    <td>{{ message.timestamp.strftime("%d-%m-%Y %H:%M:%S") }}</td>
-                    <td>{{ message.deleted }}</td>
-                    <td>
-                        <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#editMessageModal{{ message.id }}">
-                            ✏️
-                        </button>
-                        <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteMessageModal{{ message.id }}">
-                            🗑️
-                        </button>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="container">
 
-    <a href="{{ url_for('admin.admin_home') }}" class="btn btn-primary">Go back</a>
+    <!-- Messages Table -->
+    <div class="admin-section">
+        <h4><i class="fa-solid fa-inbox me-2"></i>All Messages</h4>
+        <div class="table-responsive">
+            <table class="table-fhq">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>User ID</th>
+                        <th>Content</th>
+                        <th>Timestamp</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for message in messages %}
+                        <tr>
+                            <td>{{ message.id }}</td>
+                            <td>{{ message.user_id }}</td>
+                            <td>{{ message.content }}</td>
+                            <td>{{ message.timestamp.strftime("%d-%m-%Y %H:%M:%S") }}</td>
+                            <td>
+                                {% if message.deleted %}
+                                    <span class="badge bg-danger">Deleted</span>
+                                {% else %}
+                                    <span class="badge bg-success">Active</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#editMessageModal{{ message.id }}">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteMessageModal{{ message.id }}">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-
-
+    <!-- Back Button -->
+    <div class="action-bar">
+        <a href="{{ url_for('admin.admin_home') }}" class="btn btn-outline-secondary">
+            <i class="fa-solid fa-arrow-left me-1"></i> Back to Admin
+        </a>
+        <div></div>
+    </div>
+</div>
 
 {% endblock %}

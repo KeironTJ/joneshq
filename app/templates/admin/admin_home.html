@@ -1,25 +1,60 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="card p-4 shadow text-center">
-        <h1 class="mb-3">Admin Dashboard</h1>
-        <p class="lead">Manage users, meal plans, and messages efficiently.</p>
 
-        <div class="d-grid gap-3 mt-4">
-            <a href="{{ url_for('admin.admin_users') }}" class="btn btn-primary btn-lg">
-                <i class="bi bi-people"></i> View All Users
+<!-- Page Header -->
+<div class="page-header-admin">
+    <h1><i class="fa-solid fa-shield-halved me-2"></i>Admin Dashboard</h1>
+    <p class="mb-0">Manage users, families, meal plans, and messages.</p>
+</div>
+
+<div class="container">
+    <div class="row g-4">
+        <div class="col-md-6">
+            <a href="{{ url_for('admin.admin_users') }}" class="text-decoration-none">
+                <div class="feature-card-admin h-100">
+                    <div class="icon-circle" style="background: var(--admin-color);">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <h5>Users</h5>
+                    <p class="text-muted mb-0">View, manage and assign roles to users</p>
+                </div>
             </a>
-            <a href="{{ url_for('admin.admin_mealplanner') }}" class="btn btn-success btn-lg">
-                <i class="bi bi-calendar-check"></i> View All Meal Plans
+        </div>
+        <div class="col-md-6">
+            <a href="{{ url_for('admin.admin_families') }}" class="text-decoration-none">
+                <div class="feature-card-family h-100">
+                    <div class="icon-circle" style="background: var(--family-color);">
+                        <i class="fa-solid fa-people-roof"></i>
+                    </div>
+                    <h5>Families</h5>
+                    <p class="text-muted mb-0">Manage family groups and memberships</p>
+                </div>
             </a>
-            <a href="{{ url_for('admin.admin_messages') }}" class="btn btn-warning btn-lg">
-                <i class="bi bi-chat-dots"></i> View All Messages
+        </div>
+        <div class="col-md-6">
+            <a href="{{ url_for('admin.admin_mealplanner') }}" class="text-decoration-none">
+                <div class="feature-card-meals h-100">
+                    <div class="icon-circle" style="background: var(--meal-color);">
+                        <i class="fa-solid fa-utensils"></i>
+                    </div>
+                    <h5>Meal Plans</h5>
+                    <p class="text-muted mb-0">View and manage all meal plan entries</p>
+                </div>
             </a>
-            <a href="{{ url_for('admin.admin_families') }}" class="btn btn-info btn-lg">
-                <i class="bi bi-house"></i> View All Families
+        </div>
+        <div class="col-md-6">
+            <a href="{{ url_for('admin.admin_messages') }}" class="text-decoration-none">
+                <div class="feature-card-chat h-100">
+                    <div class="icon-circle" style="background: var(--chat-color);">
+                        <i class="fa-solid fa-envelope"></i>
+                    </div>
+                    <h5>Messages</h5>
+                    <p class="text-muted mb-0">View and moderate chat messages</p>
+                </div>
             </a>
         </div>
     </div>
 </div>
+
 {% endblock %}

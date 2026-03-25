@@ -2,91 +2,106 @@
 
 {% block content %}
 
-<div class="customdiv">
-    <h1>Admin - Mealplanner</h1>
+<!-- Page Header -->
+<div class="page-header-admin">
+    <h1><i class="fa-solid fa-utensils me-2"></i>Admin &mdash; Meal Planner</h1>
+    <p class="mb-0">View and manage all meal plan entries</p>
 </div>
 
-<div class="customdiv">
-    <h2>View all meal entries</h2>
+<div class="container">
 
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>User ID</th>
-                <th>Date</th>
-                <th>Description</th>
-                <th>Source</th> 
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for meal in mealplan %}
-                <tr>
-                    <td>{{ meal.id }}</td>
-                    <td>{{ meal.user_id }}</td>
-                    <td>{{ meal.meal_date.strftime("%d-%m-%Y") }}</td>
-                    <td>{{ meal.meal_description }}</td>
-                    <td>{{ meal.meal_source }}</td>
-                    <td>
-                        <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#editMealModal{{ meal.id }}">
-                            ✏️
-                        </button>
-                        <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteMealModal{{ meal.id }}">
-                            🗑️
-                        </button>
-                    </td>
-                </tr>
-            {% endfor %}
-            <tr>
-                <form action="{{ url_for('admin.add_meal') }}" method="post">
-                    {{ form.hidden_tag() }}
-                    <td>ADD</td> <!-- Empty ID column -->
-                    <td></td> <!-- Empty User ID column -->
-                    <td>{{ form.meal_date(class="form-control") }}</td>
-                    <td>{{ form.meal_description(class="form-control") }}</td>
-                    <td>{{ form.meal_source(class="form-control") }}</td>
-                    <td>
-                        <button type="submit" class="btn btn-outline-success btn-sm">➕</button>
-                    </td>
-                </form>
-            </tr>
-        </tbody>
-    </table>
+    <!-- Meals Table -->
+    <div class="admin-section">
+        <h4><i class="fa-solid fa-bowl-food me-2"></i>All Meal Entries</h4>
+        <div class="table-responsive">
+            <table class="table-fhq">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>User ID</th>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Source</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for meal in mealplan %}
+                        <tr>
+                            <td>{{ meal.id }}</td>
+                            <td>{{ meal.user_id }}</td>
+                            <td>{{ meal.meal_date.strftime("%d-%m-%Y") }}</td>
+                            <td>{{ meal.meal_description }}</td>
+                            <td>{{ meal.meal_source }}</td>
+                            <td>
+                                <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#editMealModal{{ meal.id }}">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteMealModal{{ meal.id }}">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    <tr>
+                        <form action="{{ url_for('admin.add_meal') }}" method="post">
+                            {{ form.hidden_tag() }}
+                            <td><span class="badge bg-success">NEW</span></td>
+                            <td></td>
+                            <td>{{ form.meal_date(class="form-control form-control-sm") }}</td>
+                            <td>{{ form.meal_description(class="form-control form-control-sm") }}</td>
+                            <td>{{ form.meal_source(class="form-control form-control-sm") }}</td>
+                            <td>
+                                <button type="submit" class="btn btn-success btn-sm">
+                                    <i class="fa-solid fa-plus"></i>
+                                </button>
+                            </td>
+                        </form>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Back Button -->
+    <div class="action-bar">
+        <a href="{{ url_for('admin.admin_home') }}" class="btn btn-outline-secondary">
+            <i class="fa-solid fa-arrow-left me-1"></i> Back to Admin
+        </a>
+        <div></div>
+    </div>
 </div>
 
-    <a href="{{ url_for('admin.admin_home') }}" class="btn btn-primary">Go back</a>
-
-</div>
-
-<!-- Edit Meal Modal -->
+<!-- Edit Meal Modals -->
 {% for meal in mealplan %}
 <div class="modal fade" id="editMealModal{{ meal.id }}" tabindex="-1" aria-labelledby="editMealModalLabel{{ meal.id }}" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editMealModalLabel{{ meal.id }}">Edit Meal</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <div class="modal-header modal-header-meals">
+                <h5 class="modal-title" id="editMealModalLabel{{ meal.id }}"><i class="fa-solid fa-pen-to-square me-2"></i>Edit Meal</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <form action="{{ url_for('admin.edit_meal', meal_id=meal.id) }}" method="post" novalidate>
                     {{ form.hidden_tag() }}
                     <div class="mb-3">
-                        <label class="form-label">{{ form.meal_date.label }}</label>
+                        <label class="form-label fw-bold">{{ form.meal_date.label }}</label>
                         <input type="date" class="form-control" name="meal_date" value="{{ meal.meal_date.strftime('%Y-%m-%d') }}">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">{{ form.meal_description.label }}</label>
+                        <label class="form-label fw-bold">{{ form.meal_description.label }}</label>
                         <input type="text" class="form-control" name="meal_description" value="{{ meal.meal_description }}">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">{{ form.meal_source.label }}</label>
+                        <label class="form-label fw-bold">{{ form.meal_source.label }}</label>
                         <input type="text" class="form-control" name="meal_source" value="{{ meal.meal_source }}">
                     </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary flex-grow-1">
+                            <i class="fa-solid fa-check me-1"></i> Save Changes
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary flex-grow-1" data-bs-dismiss="modal">Cancel</button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -94,22 +109,24 @@
 </div>
 {% endfor %}
 
-<!-- Delete Meal Modal -->
+<!-- Delete Meal Modals -->
 {% for meal in mealplan %}
 <div class="modal fade" id="deleteMealModal{{ meal.id }}" tabindex="-1" aria-labelledby="deleteMealModalLabel{{ meal.id }}" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title" id="deleteMealModalLabel{{ meal.id }}">Delete Meal</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header modal-header-danger">
+                <h5 class="modal-title" id="deleteMealModalLabel{{ meal.id }}"><i class="fa-solid fa-triangle-exclamation me-2"></i>Delete Meal</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-                <p>Are you sure you want to delete this meal entry?</p>
-                <strong>{{ meal.meal_date.strftime("%d-%m-%Y") }} - {{ meal.meal_description }}</strong>
+            <div class="modal-body text-center py-4">
+                <p class="mb-2">Are you sure you want to delete this meal entry?</p>
+                <strong class="d-block mb-3">{{ meal.meal_date.strftime("%d-%m-%Y") }} &mdash; {{ meal.meal_description }}</strong>
                 <form action="{{ url_for('admin.delete_meal', meal_id=meal.id) }}" method="post">
-                    <div class="d-flex justify-content-end">
-                        <button type="submit" class="btn btn-danger">Yes, Delete</button>
-                        <button type="button" class="btn btn-secondary ms-2" data-bs-dismiss="modal">Cancel</button>
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fa-solid fa-trash me-1"></i> Yes, Delete
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
                     </div>
                 </form>
             </div>
@@ -117,9 +134,5 @@
     </div>
 </div>
 {% endfor %}
-
-
-
-
 
 {% endblock %}

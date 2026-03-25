@@ -1,181 +1,116 @@
 {% extends "base.html" %}
 {% block content %}
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-<div>
-    <div class="p-2 shadow bg-soft-beige text-center mb-4">
-        <h1>📅 Activity Planner</h1>
-        <p>Manage your family activities effortlessly.</p>
-    </div>
+<div class="page-header page-header-activities">
+    <h1><i class="fas fa-calendar-alt me-2"></i>Activity Planner</h1>
+    <p>Manage your family activities effortlessly.</p>
 </div>
 
-<div>
-    <div class="text-center">
-        <a href="#" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#addActivityModal">
-            ➕ Add New Activity
-        </a>
-    </div>
+<div class="text-center mb-4">
+    <a href="#" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#addActivityModal">
+        <i class="fas fa-plus me-1"></i> Add New Activity
+    </a>
 </div>
 
-<hr class="mb-4">
-
-<!-- Displaying Activities -->
 {% if activities|length == 0 %}
-    <div class="p-2 shadow col text-center mb-4">
-        <h5>No activities scheduled yet.</h5>
+    <div class="text-center py-4">
+        <p class="text-muted"><i class="fas fa-calendar-alt me-2"></i>No activities scheduled yet.</p>
     </div>
 {% endif %}
 
-<div class="container">
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
-
-        {% for activity in activities %}
-            <a href="{{ url_for('activity_planner.activity_details', id=activity.id) }}" class="card-link text-decoration-none">
-                <div class="col">
-                    <div class="card shadow-lg h-100">
-
-                        <!-- HEADER CARD -->
-                        <div class="card-header bg-beige justify-content-center align-items-center text-center">
-                            <h5 class="mb-0">{{ activity.activity_title }}</h5>
-                        </div>
-                
-                        <!-- BODY CARD -->
-                        <div class="card-body d-flex flex-column justify-content-center align-items-center text-center">
-                            <small>
-                                <span class="badge bg-success">
-                                    {% if activity.activity_all_day_event %}
-                                        All Day Event
-                                    {% else %}
-                                        Timed Event
-                                    {% endif %}
-                                </span>
-                            </small>
-
-                            <small class="text-muted">📅 <strong>From: </strong> {{ activity.activity_start_date.strftime("%d %B %Y") }} 
-                                {% if activity.activity_start_time %}
-                                    at {{ activity.activity_start_time.strftime("%I:%M %p") }}
-                                {% endif %} 
-                            </small>
-
-                            <small class="text-muted">📅 <strong>To:</strong> {{ activity.activity_end_date.strftime("%d %B %Y") }}
-                                {% if activity.activity_end_time %}
-                                    at {{ activity.activity_end_time.strftime("%I:%M %p") }}
-                                {% endif %}
-                            </small>
-
-                            <small class="text-muted">
-                                ⏳ <strong>Duration:</strong> 
-                                {% if activity.activity_all_day_event %}
-                                    {{ (activity.activity_end_date - activity.activity_start_date).days + 1 }} days
-                                {% elif activity.activity_start_time and activity.activity_end_time %}
-                                    {% set start = activity.activity_start_date.replace(hour=activity.activity_start_time.hour, minute=activity.activity_start_time.minute) %}
-                                    {% set end = activity.activity_end_date.replace(hour=activity.activity_end_time.hour, minute=activity.activity_end_time.minute) %}
-                                    {% set duration = (end - start).total_seconds() %}
-                                    
-                                    {% if (duration // 86400)|int == 0 %}  
-                                        {% else %} 
-                                            {{ (duration // 86400)|int }} days 
-                                    {% endif %}
-
-                                    {{ ((duration % 86400) // 3600)|int }} hours 
-                                    {{ ((duration % 3600) // 60)|int }} minutes
-                                {% else %}
-                                    No specific time set
-                                {% endif %}
-                            </small>
-                        </div>
-                            
-                    </div>
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+    {% for activity in activities %}
+    <div class="col">
+        <a href="{{ url_for('activity_planner.activity_details', id=activity.id) }}" class="card-link">
+            <div class="card h-100">
+                <div class="card-header text-center" style="background:var(--activity-bg);">
+                    <strong>{{ activity.activity_title }}</strong>
                 </div>
-            </a>
-        {% endfor %}
+                <div class="card-body d-flex flex-column align-items-center text-center gap-1">
+                    <span class="badge badge-activity">
+                        {% if activity.activity_all_day_event %}All Day{% else %}Timed Event{% endif %}
+                    </span>
+                    <small class="text-muted"><i class="fas fa-play me-1"></i>{{ activity.activity_start_date.strftime("%d %b %Y") }}{% if activity.activity_start_time %} at {{ activity.activity_start_time.strftime("%I:%M %p") }}{% endif %}</small>
+                    <small class="text-muted"><i class="fas fa-stop me-1"></i>{{ activity.activity_end_date.strftime("%d %b %Y") }}{% if activity.activity_end_time %} at {{ activity.activity_end_time.strftime("%I:%M %p") }}{% endif %}</small>
+                    <small class="text-muted">
+                        <i class="fas fa-hourglass-half me-1"></i>
+                        {% if activity.activity_all_day_event %}
+                            {{ (activity.activity_end_date - activity.activity_start_date).days + 1 }} days
+                        {% elif activity.activity_start_time and activity.activity_end_time %}
+                            {% set start = activity.activity_start_date.replace(hour=activity.activity_start_time.hour, minute=activity.activity_start_time.minute) %}
+                            {% set end = activity.activity_end_date.replace(hour=activity.activity_end_time.hour, minute=activity.activity_end_time.minute) %}
+                            {% set duration = (end - start).total_seconds() %}
+                            {% if (duration // 86400)|int > 0 %}{{ (duration // 86400)|int }}d {% endif %}{{ ((duration % 86400) // 3600)|int }}h {{ ((duration % 3600) // 60)|int }}m
+                        {% else %}
+                            No specific time set
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+        </a>
     </div>
+    {% endfor %}
 </div>
 
 <!-- Add Activity Modal -->
 <div class="modal fade" id="addActivityModal" tabindex="-1" aria-labelledby="addActivityModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header bg-soft-beige">
-                <h5 class="modal-title">Add New Activity</h5>
+            <div class="modal-header modal-header-activities">
+                <h5 class="modal-title"><i class="fas fa-plus me-2"></i>Add New Activity</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-
             <div class="modal-body">
                 <form id="addActivityForm" method="POST" action="{{ url_for('activity_planner.activityplanner') }}">
                     {{ addactivityform.hidden_tag() }}
-
                     <div class="mb-3">
-                        <label for="activity_title" class="form-label">Activity Title:*</label>
+                        <label class="form-label">Activity Title *</label>
                         {{ addactivityform.activity_title(class="form-control") }}
-                        
                     </div>
-
-                    <div class="mb-3">
-                        <label for="activity_start_date" class="form-label">Start Date:*</label>
-                        {{ addactivityform.activity_start_date(class="form-control") }}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Start Date *</label>
+                            {{ addactivityform.activity_start_date(class="form-control") }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">End Date *</label>
+                            {{ addactivityform.activity_end_date(class="form-control") }}
+                        </div>
                     </div>
-
-                    <div class="mb-3">
-                        <label for="activity_end_date" class="form-label">End Date:*</label>
-                        {{ addactivityform.activity_end_date(class="form-control") }}
-                        
+                    <div class="mb-3 form-check">
+                        {{ addactivityform.activity_all_day_event(class="form-check-input") }}
+                        <label class="form-check-label">All Day Event</label>
                     </div>
-
-                    <div class="mb-3">
-                        <label for="activity_all_day_event" class="form-check-label">
-                            {{ addactivityform.activity_all_day_event }} All Day Event
-
-                        </label>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Start Time</label>
+                            {{ addactivityform.activity_start_time(class="form-control") }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">End Time</label>
+                            {{ addactivityform.activity_end_time(class="form-control") }}
+                        </div>
                     </div>
-
                     <div class="mb-3">
-                        <label for="activity_start_time" class="form-label">Start Time:</label>
-                        {{ addactivityform.activity_start_time(class="form-control") }}
-                        
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="activity_end_time" class="form-label">End Time:</label>
-                        {{ addactivityform.activity_end_time(class="form-control") }}
-                        
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="activity_location" class="form-label">Location:</label>
+                        <label class="form-label">Location</label>
                         {{ addactivityform.activity_location(class="form-control") }}
-                       
                     </div>
-
                     <div class="mb-3">
-                        <label for="activity_description" class="form-label">Description:</label>
+                        <label class="form-label">Description</label>
                         {{ addactivityform.activity_description(class="form-control", rows=3) }}
-                        
                     </div>
-                    
                     <div class="mb-3">
-                        <label for="activity_comments" class="form-label">Comments:</label>
+                        <label class="form-label">Comments</label>
                         {{ addactivityform.activity_comments(class="form-control", rows=3) }}
-                        
                     </div>
-
                     <div class="modal-footer">
-                        <button type="submit" class="btn btn-warning w-100">
-                            {{ addactivityform.add_activity.label.text }}
-                        </button>
-                        <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal">
-                            Close
-                        </button>
+                        <button type="submit" class="btn btn-warning w-100">{{ addactivityform.add_activity.label.text }}</button>
+                        <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal">Close</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
-
-
-
-
 
 {% endblock %}

@@ -1,33 +1,30 @@
 {% extends "base.html" %}
 {% block content %}
 
-
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h3 class="card-title">Choose Family</h3>
+<div class="row justify-content-center">
+    <div class="col-md-5 col-lg-4">
+        <div class="card auth-card">
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <div style="width:56px;height:56px;border-radius:50%;background:var(--family-bg);display:inline-flex;align-items:center;justify-content:center;margin-bottom:0.75rem;">
+                        <i class="fas fa-exchange-alt" style="font-size:1.4rem;color:var(--family-color)"></i>
+                    </div>
+                    <h2>Choose Family</h2>
+                    <p class="text-muted">Switch your active family group</p>
                 </div>
-                <div class="card-body">
-                    <form method="POST" action="{{ url_for('family_manager.family_choose') }}">
-                        {{ form.hidden_tag() }}
-                        <div class="mb-3">
-                            {{ form.family.label(class="form-label") }}
-                            {{ form.family(class="form-select") }}
-                        </div>
-                        <button type="submit" class="btn btn-primary">Set Active Family</button>
-                    </form>
-                </div>
+                <form method="POST" action="{{ url_for('family_manager.family_choose') }}">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.family.label(class="form-label") }}
+                        {{ form.family(class="form-select") }}
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">Set Active Family</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 </div>
-
-
-
-
-
-
 
 {% endblock %}

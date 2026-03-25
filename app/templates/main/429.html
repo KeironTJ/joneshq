@@ -1,14 +1,15 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container py-5 text-center">
-    <div class="display-4 mb-4">Whoa there!</div>
-    <p class="lead">You've hit the brakes on our rate limiter.</p>
+<div class="error-page">
+    <div class="error-code">429</div>
+    <h2>Whoa there!</h2>
+    <p>You've hit the brakes on our rate limiter.</p>
     {% if reset_in %}
     <p class="text-muted">Try again in about {{ reset_in|int }} seconds.</p>
     {% else %}
     <p class="text-muted">Please wait a moment before trying again.</p>
     {% endif %}
-    <a href="{{ url_for('main.index') }}" class="btn btn-primary mt-3">Return Home</a>
+    <a href="{{ url_for('main.index') }}" class="btn btn-primary mt-3"><i class="fas fa-home me-1"></i> Return Home</a>
 </div>
 {% endblock %}

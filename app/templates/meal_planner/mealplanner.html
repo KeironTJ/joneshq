@@ -1,109 +1,76 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div>
-    <div class="p-2 shadow bg-green text-center mb-4">
-        <h1>🍽️ Meal Planner</h1>
-        <p>Organize meals and recipes for the family.</p>
-    </div>
+<div class="page-header page-header-meals">
+    <h1><i class="fas fa-utensils me-2"></i>Meal Planner</h1>
+    <p>Organize meals and recipes for the family.</p>
 </div>
 
-<div>
-    <div class="text-center">
-        <a href="#" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addMealModal">
-            ➕ Add New Meal
-        </a>
-    </div>
+<div class="text-center mb-4">
+    <a href="#" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addMealModal">
+        <i class="fas fa-plus me-1"></i> Add New Meal
+    </a>
 </div>
 
-
-<hr class="mb-4">
-
-<!--- Displaying Meals -->
 {% if mealplan|length == 0 %}
-    <div class="p-2 shadow col text-center mb-4">
-        <h5>No Meals Planned yet.</h5>
+    <div class="text-center py-4">
+        <p class="text-muted"><i class="fas fa-utensils me-2"></i>No meals planned yet.</p>
     </div>
 {% endif %}
 
-<div class="container">
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
-        
-
-        {% for meal in mealplan %}
-        <a href="{{ url_for('meal_planner.meal_details', meal_id=meal.id) }}" class="card-link text-decoration-none">
-            <div class="col">
-                <div class="card shadow-lg h-100">
-
-                    <!--HEADER CARD-->
-                    <div class="card-header bg-soft-green justify-content-center align-items-center text-center">
-                        <strong class="card-title">{{ meal.meal_title }}</strong><br>    
-                    </div>
-
-                    <!--BODY CARD-->
-                    <small>
-                        <div class="card-body d-flex flex-column justify-content-center align-items-center text-center">
-                            <p class="card-text flex-grow-1">📅 <strong>Date:</strong> {{ meal.meal_date.strftime("%d-%m-%Y") }} - {{ meal.meal_date.strftime("%A") }} </p>
-                        </div>
-                    </small>
-                    
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+    {% for meal in mealplan %}
+    <div class="col">
+        <a href="{{ url_for('meal_planner.meal_details', meal_id=meal.id) }}" class="card-link">
+            <div class="card h-100">
+                <div class="card-header text-center" style="background:var(--meal-bg);">
+                    <strong>{{ meal.meal_title }}</strong>
+                </div>
+                <div class="card-body text-center">
+                    <small class="text-muted"><i class="fas fa-calendar-day me-1"></i>{{ meal.meal_date.strftime("%d-%m-%Y") }} — {{ meal.meal_date.strftime("%A") }}</small>
                 </div>
             </div>
         </a>
-        {% endfor %}
     </div>
+    {% endfor %}
 </div>
 
-<hr class="mb-4">
-
-<!--Add Meal Modal-->
+<!-- Add Meal Modal -->
 <div class="modal fade" id="addMealModal" tabindex="-1" aria-labelledby="addMealModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-
-            <div class="modal-header bg-green">
-                <h5 class="modal-title">Add New Meal</h5>
+            <div class="modal-header modal-header-meals">
+                <h5 class="modal-title"><i class="fas fa-plus me-2"></i>Add New Meal</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-
             <div class="modal-body">
                 <form id="addMealForm" method="POST" action="{{ url_for('meal_planner.mealplanner') }}">
                     {{ addMealForm.hidden_tag() }}
-
                     <div class="mb-3">
-                        <label for="meal_date" class="form-label">Meal Date:*</label>
+                        <label for="meal_date" class="form-label">Meal Date *</label>
                         {{ addMealForm.meal_date(class="form-control") }}
                     </div>
-
                     <div class="mb-3">
-                        <label for="neal_title" class="form-label">Meal Title:*</label>
+                        <label for="meal_title" class="form-label">Meal Title *</label>
                         {{ addMealForm.meal_title(class="form-control") }}
                     </div>
-
                     <div class="mb-3">
-                        <label for="meal_description" class="form-label">Meal Description:</label>
+                        <label for="meal_description" class="form-label">Description</label>
                         {{ addMealForm.meal_description(class="form-control") }}
                     </div>
-
                     <div class="mb-3">
-                        <label for="meal_source" class="form-label">Meal Source:</label>
-                        {{ addMealForm.meal_source(class="form-control") }}     
+                        <label for="meal_source" class="form-label">Recipe Source</label>
+                        {{ addMealForm.meal_source(class="form-control") }}
                     </div>
-
                     <div class="modal-footer">
-                        <button type="submit" class="btn btn-success w-100">
-                            {{ addMealForm.add_meal.label.text }}
-                        </button>
-                        <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal">
-                            Close
-                        </button>
+                        <button type="submit" class="btn btn-success w-100">{{ addMealForm.add_meal.label.text }}</button>
+                        <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal">Close</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
-
 
 {% endblock %}
 

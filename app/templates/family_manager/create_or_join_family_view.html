@@ -1,13 +1,18 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow-lg">
-                <div class="card-body p-4">
-                    <h2 class="text-center mb-4">Create or Join Family</h2>
-                    <form class="customform" action="" method="post" novalidate>
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card auth-card">
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <div style="width:56px;height:56px;border-radius:50%;background:var(--family-bg);display:inline-flex;align-items:center;justify-content:center;margin-bottom:0.75rem;">
+                        <i class="fas fa-users" style="font-size:1.4rem;color:var(--family-color)"></i>
+                    </div>
+                    <h2>Create or Join Family</h2>
+                    <p class="text-muted">Get started with your family group</p>
+                </div>
+                <form action="" method="post" novalidate>
                         {{ form.hidden_tag() }}
 
                         <div class="mb-3">
@@ -41,7 +46,7 @@
                             </div>
                         </div>
                         <div class="d-grid">
-                            {{ form.submit(class="btn btn-primary") }}
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
                         </div>
                     </form>
                 </div>
@@ -49,9 +54,6 @@
         </div>
     </div>
 </div>
-
-                    
-
 
 
 <script>

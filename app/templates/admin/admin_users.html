@@ -2,145 +2,162 @@
 
 {% block content %}
 
-<div class="customdiv">
-    <h1>Admin - Users</h1>
+<!-- Page Header -->
+<div class="page-header-admin">
+    <h1><i class="fa-solid fa-users me-2"></i>Admin &mdash; Users</h1>
+    <p class="mb-0">Manage users, roles, and permissions</p>
 </div>
 
-<div class="customdiv">
-    <h2>View all roles</h2>
+<div class="container">
 
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Role</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for role in roles %}
-                <tr>
-                    <td>{{ role.id }}</td>
-                    <td>{{ role.name }}</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-
-<div class="customdiv">
-    <h2>View all users:</h1>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Username</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>First Name</th>
-                <th>Last Name</th>
-                <th>Primary Phone Number</th>
-                <th>Secondary Phone Number</th>
-                <th>Address</th>
-                <th>DOB</th>
-                <th>Active Family ID</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for user in users %}
-                <tr>
-                    <td>{{ user.id }}</td>
-                    <td>{{ user.username }}</td>
-                    <td>{{ user.email }}</td>
-                    <td>
-                        {% for role in user.roles %}
-                            {{ role.id }}
-                        {% endfor %}        
-                    </td>
-                    <td>{{ user.first_name }}</td>
-                    <td>{{ user.last_name }}</td>
-                    <td>{{ user.primary_phone_number }}</td>
-                    <td>{{ user.secondary_phone_number }}</td>
-                    <td>{{ user.address }}</td>
-                    <td>
-                        {% if user.dob %}
-                            {{ user.dob.strftime("%d-%m-%Y") }}
-                        {% else %}
-                            {{ user.dob }}
-                        {% endif %}
-                    </td>
-                    <td>{{ user.active_family_id }}</td>
-                    <td>
-                        {% if user.id != current_user.id and not user.is_admin() %}
-                            <form method="POST" action="{{ url_for('admin.delete_user', user_id=user.id) }}" onsubmit="return confirm('Delete {{ user.username }}? This cannot be undone.');">
-                                {{ delete_user_form.hidden_tag() }}
-                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                            </form>
-                        {% else %}
-                            <span class="text-muted">Protected</span>
-                        {% endif %}
-                    </td>                 
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-</div>
-
-
-<div class="customdiv">
-    <h2>View All User Roles</h2>
-    <table class="table table-striped">
-            
-        <thead>
-            <tr>
-                <th>User</th>
-                <th>Roles</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for user in users %}
-                <tr>
-                    <td>{{ user.username }}</td>
-                    <td>
-                        {% for role in user.roles %}
-                            {{ role.name }}{% if not loop.last %}, {% endif %}
-                        {% endfor %}
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-
-
-<!-- Assign Role to user with dropdown using jinja forms.py-->
-<div class="customdiv card p-4 shadow">
-    <h2 class="text-center">Assign a Role</h2>
-    <form method="POST">
-        {{ assignuserroleform.hidden_tag() }}
-
-        <div class="mb-3">
-            <label for="username" class="form-label">Username:</label>
-            {{ assignuserroleform.username(class="form-select") }}
+    <!-- Roles Table -->
+    <div class="admin-section">
+        <h4><i class="fa-solid fa-user-tag me-2"></i>All Roles</h4>
+        <div class="table-responsive">
+            <table class="table-fhq">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Role</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for role in roles %}
+                        <tr>
+                            <td>{{ role.id }}</td>
+                            <td>{{ role.name }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
+    </div>
 
-        <div class="mb-3">
-            <label for="role" class="form-label">Role:</label>
-            {{ assignuserroleform.role(class="form-select") }}
+    <!-- All Users Table -->
+    <div class="admin-section">
+        <h4><i class="fa-solid fa-address-book me-2"></i>All Users</h4>
+        <div class="table-responsive">
+            <table class="table-fhq">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th>Phone</th>
+                        <th>Phone 2</th>
+                        <th>Address</th>
+                        <th>DOB</th>
+                        <th>Family</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                        <tr>
+                            <td>{{ user.id }}</td>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                {% for role in user.roles %}
+                                    {{ role.id }}
+                                {% endfor %}
+                            </td>
+                            <td>{{ user.first_name }}</td>
+                            <td>{{ user.last_name }}</td>
+                            <td>{{ user.primary_phone_number }}</td>
+                            <td>{{ user.secondary_phone_number }}</td>
+                            <td>{{ user.address }}</td>
+                            <td>
+                                {% if user.dob %}
+                                    {{ user.dob.strftime("%d-%m-%Y") }}
+                                {% else %}
+                                    {{ user.dob }}
+                                {% endif %}
+                            </td>
+                            <td>{{ user.active_family_id }}</td>
+                            <td>
+                                {% if user.id != current_user.id and not user.is_admin() %}
+                                    <form method="POST" action="{{ url_for('admin.delete_user', user_id=user.id) }}" onsubmit="return confirm('Delete {{ user.username }}? This cannot be undone.');">
+                                        {{ delete_user_form.hidden_tag() }}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <span class="badge bg-secondary">Protected</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
+    </div>
 
-        <div class="d-flex justify-content-between mt-4">
-            {{ assignuserroleform.assign(class="btn btn-success w-45") }}
-            {{ assignuserroleform.unassign(class="btn btn-danger w-45") }}
+    <!-- User Roles Table -->
+    <div class="admin-section">
+        <h4><i class="fa-solid fa-id-badge me-2"></i>User Role Assignments</h4>
+        <div class="table-responsive">
+            <table class="table-fhq">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Roles</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                        <tr>
+                            <td>{{ user.username }}</td>
+                            <td>
+                                {% for role in user.roles %}
+                                    {{ role.name }}{% if not loop.last %}, {% endif %}
+                                {% endfor %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-    </form>
+    </div>
+
+    <!-- Assign Role Form -->
+    <div class="admin-section">
+        <h4 class="text-center"><i class="fa-solid fa-user-gear me-2"></i>Assign a Role</h4>
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <form method="POST">
+                    {{ assignuserroleform.hidden_tag() }}
+
+                    <div class="mb-3">
+                        <label for="username" class="form-label fw-bold">Username</label>
+                        {{ assignuserroleform.username(class="form-select") }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="role" class="form-label fw-bold">Role</label>
+                        {{ assignuserroleform.role(class="form-select") }}
+                    </div>
+
+                    <div class="d-flex gap-3 mt-4">
+                        {{ assignuserroleform.assign(class="btn btn-success flex-grow-1") }}
+                        {{ assignuserroleform.unassign(class="btn btn-danger flex-grow-1") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Back Button -->
+    <div class="action-bar">
+        <a href="{{ url_for('admin.admin_home') }}" class="btn btn-outline-secondary">
+            <i class="fa-solid fa-arrow-left me-1"></i> Back to Admin
+        </a>
+        <div></div>
+    </div>
 </div>
-
-<br>
-
-
-<a href="{{ url_for('admin.admin_home') }}" class="btn btn-primary">Go back</a>
-
 
 {% endblock %}

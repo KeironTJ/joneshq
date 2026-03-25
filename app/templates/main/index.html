@@ -1,78 +1,66 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="container mt-5">
-    <div class="p-5 shadow text-center mb-5 bg-primary text-white rounded-lg">
-        <h1>Welcome to Family HQ!</h1>
-        <p class="lead">Simplify your family life and stay connected with ease.</p>
-        <p class="mt-3">Family HQ is your central hub for organizing daily activities, planning meals together, and keeping everyone in the loop.</p>
-    </div>
+<!-- Hero -->
+<div class="hero-section mb-4">
+    <h1><i class="fas fa-home me-2"></i>Welcome to Family HQ!</h1>
+    <p class="lead mt-2">Simplify your family life and stay connected with ease.</p>
+    <p class="mt-2 mb-0">Your central hub for organizing daily activities, planning meals together, and keeping everyone in the loop.</p>
+</div>
 
-    <hr class="my-4">
+<!-- Features -->
+<section class="mb-4">
+    <h2 class="text-center mb-1">Discover the Power of Family HQ</h2>
+    <p class="text-center text-muted mb-4">The tools you need to effortlessly manage the chaos and cherish the moments that matter.</p>
 
-    <section class="py-5">
-        <h2>Discover the Power of Family HQ</h2>
-        <p class="lead">Imagine a smoother, more organized family life. Family HQ provides the tools you need to effortlessly manage the chaos and cherish the moments that matter.</p>
-
-        <div class="row mt-4">
-            
-            <div class="col-md-4 mb-4">
-                <div class="card shadow-sm h-100 border-primary">
-                    <div class="card-body text-center bg-soft-primary">
-                        <i class="bi bi-chat-dots-fill text-primary mb-3" style="font-size: 2em;"></i>
-                        <h5 class="card-title">Stay Connected with Family Chat</h5>
-                        <p class="card-text">Real-time messaging to coordinate plans, share updates, and simply stay in touch with loved ones, no matter where they are.</p>
-                    </div>
+    <div class="row g-4">
+        <div class="col-md-4">
+            <a href="{{ url_for('chat.familychat') }}" class="text-decoration-none">
+                <div class="card feature-card feature-card-chat h-100">
+                    <div class="feature-icon"><i class="fas fa-comments"></i></div>
+                    <h5>Family Chat</h5>
+                    <p>Real-time messaging to coordinate plans, share updates, and stay in touch with loved ones.</p>
                 </div>
-            </div>
-
-            <div class="col-md-4 mb-4">
-                <div class="card shadow-sm h-100 border-success">
-                    <div class="card-body text-center bg-soft-green">
-                        <i class="bi bi-egg-fried text-warning mb-3" style="font-size: 2em;"></i>
-                        <h5 class="card-title">Simple Meal Planning</h5>
-                        <p class="card-text">Plan your family meals in advance, share recipes, and make grocery shopping a breeze. Say goodbye to last-minute dinner dilemmas!</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-4 mb-4">
-                <div class="card shadow-sm h-100 border-warning">
-                    <div class="card-body text-center bg-soft-beige">
-                        <i class="bi bi-calendar-event-fill text-success mb-3" style="font-size: 2em;"></i>
-                        <h5 class="card-title">Effortless Activity Planning</h5>
-                        <p class="card-text">Schedule appointments, family outings, and important events. Keep everyone on the same page with a shared calendar.</p>
-                    </div>
-                </div>
-            </div>
-            
+            </a>
         </div>
-    </section>
-
-    <hr class="my-4">
-
-    <section class="py-4 bg-info text-white rounded-lg">
-        <h3 class="text-center"><i class="bi bi-list-task me-2"></i> Coming Soon: Enhanced Organization with To-Do Lists!</h3>
-        <p class="lead text-center">We're working hard to bring you even more ways to streamline your family life. Soon, you'll be able to create and share to-do lists, assign tasks, and track progress together.</p>
-    </section>
-
-    <hr class="my-4">
-
-    <div class="row justify-content-center mt-5">
-        <div class="col-md-6 text-center">
-            <h2>Ready to Simplify Your Family Life?</h2>
-            <p class="lead mb-4">Join Family HQ today and experience a more connected and organized home.</p>
-            <p>
-                <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary btn-lg me-2 shadow-sm">
-                    <i class="bi bi-box-arrow-in-right-fill"></i> Login
-                </a>
-                <a href="{{ url_for('auth.register') }}" class="btn btn-success btn-lg shadow-sm">
-                    <i class="bi bi-person-plus-fill"></i> Register
-                </a>
-            </p>
-            <p class="mt-3"><small>Already have an account? Log in to access your dashboard.</small></p>
+        <div class="col-md-4">
+            <a href="{{ url_for('meal_planner.mealplanner') }}" class="text-decoration-none">
+                <div class="card feature-card feature-card-meals h-100">
+                    <div class="feature-icon"><i class="fas fa-utensils"></i></div>
+                    <h5>Meal Planning</h5>
+                    <p>Plan meals in advance, share recipes, and make grocery shopping a breeze.</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a href="{{ url_for('activity_planner.activityplanner') }}" class="text-decoration-none">
+                <div class="card feature-card feature-card-activities h-100">
+                    <div class="feature-icon"><i class="fas fa-calendar-alt"></i></div>
+                    <h5>Activity Planning</h5>
+                    <p>Schedule appointments, outings, and important events. Keep everyone on the same page.</p>
+                </div>
+            </a>
         </div>
     </div>
+</section>
+
+<!-- Coming Soon -->
+<div class="coming-soon-banner mb-4">
+    <h3><i class="fas fa-tasks me-2"></i>Coming Soon: To-Do Lists!</h3>
+    <p>Create and share to-do lists, assign tasks, and track progress together.</p>
+</div>
+
+<!-- CTA -->
+<div class="text-center py-4">
+    <h2>Ready to Simplify Your Family Life?</h2>
+    <p class="text-muted mb-4">Join Family HQ today and experience a more connected and organized home.</p>
+    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary btn-lg me-2">
+        <i class="fas fa-sign-in-alt"></i> Login
+    </a>
+    <a href="{{ url_for('auth.register') }}" class="btn btn-accent btn-lg">
+        <i class="fas fa-user-plus"></i> Register
+    </a>
+    <p class="mt-3 text-muted"><small>Already have an account? Log in to access your dashboard.</small></p>
 </div>
 
 {% endblock %}

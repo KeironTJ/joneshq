@@ -1,15 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
 
-<style>
-    #inviteCode {
-        display: inline-block;
-        font-family: monospace; /* Keeps UUID legible */
-        font-weight: bold;
-    }
-</style>
-
-
 <script>
     function copyInviteCode() {
         var codeElement = document.getElementById("inviteCode");
@@ -17,8 +8,6 @@
     
         navigator.clipboard.writeText(codeText).then(() => {
             alert("Invitation code copied!");
-    
-            // Manually reset the text after copying to ensure it persists
             setTimeout(() => {
                 document.getElementById("inviteCode").textContent = codeText;
             }, 50);
@@ -27,24 +16,25 @@
         });
     }
 </script>
-    
 
+<div class="page-header page-header-family">
+    <h1><i class="fas fa-users me-2"></i>{{ family.name }}</h1>
+    <p>Your family members and invite code</p>
+</div>
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h3 class="card-title">My Family - {{ family.name }} </h3>
-                </div>
-                <div class="card-body">
-                    
-                
-                    <table class="table table-bordered table-striped">
+<div class="row justify-content-center">
+    <div class="col-md-7 col-lg-6">
+        <div class="card profile-card mb-4">
+            <div class="card-header" style="background:var(--family-color);">
+                <h3 style="color:#fff;margin:0;"><i class="fas fa-user-friends me-2"></i>Members</h3>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-fhq">
+                    <table class="table mb-0">
                         <thead>
                             <tr>
-                                <th>Member Name</th>
-                                <th>Role</th>
+                                <th style="background:var(--family-color);">Member Name</th>
+                                <th style="background:var(--family-color);">Role</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -59,15 +49,19 @@
                             {% endfor %}
                         </tbody>
                     </table>
-
-                    <div class="card-body text-center">
-                        <strong>Invitation Code:</strong>
-                        <span id="inviteCode" class="badge bg-success p-2">{{ family.invitation_code }}</span>
-                        <button class="btn btn-sm btn-outline-primary" onclick="copyInviteCode()">Copy</button>
-                    </div>
-
                 </div>
             </div>
+        </div>
+
+        <div class="card text-center p-3">
+            <div>
+                <strong class="me-2">Invitation Code:</strong>
+                <span id="inviteCode" class="invite-code">{{ family.invitation_code }}</span>
+                <button class="btn btn-sm btn-outline-primary ms-2" onclick="copyInviteCode()"><i class="fas fa-copy me-1"></i>Copy</button>
+            </div>
+        </div>
+    </div>
+</div>
         </div>
     </div>
 </div>

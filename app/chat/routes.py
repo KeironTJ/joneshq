@@ -15,6 +15,17 @@ def familychat():
     form = MessageForm()
 
     if form.validate_on_submit() and form.content.data.strip():
+        message = Message(user_id=current_user.id, content=form.content.data.strip())
+        db.session.add(message)
+        db.session.commit()
+
+        socketio.emit('message_received', {
+            'id': message.id,
+            'user_id': message.user_id,
+            'username': current_user.username,
+            'content': message.content,
+            'timestamp': message.timestamp.strftime("%d-%m-%Y %H:%M:%S")
+        })
 
         return jsonify({'status': 'success'})
 

@@ -24,7 +24,7 @@
         }
 
         // WebSocket Initialization
-        window.socket = io({ transports: ["websocket"] });
+        window.socket = io({ transports: ["polling", "websocket"] });
 
         socket.on("connect", () => console.log("WebSocket connected successfully!"));
 
@@ -143,8 +143,6 @@
 
         if (!messageContent?.trim()) return;
 
-        socket.emit("new_message", { user_id: userId, content: messageContent });
-
         fetch('{{ url_for("chat.familychat") }}', {
             method: 'POST',
             body: new FormData(document.getElementById("messageForm")),
@@ -178,23 +176,19 @@
     }
 </script>
 
-<div>
-    <div class="p-2 shadow bg-soft-primary text-center mb-4">
-        <h1>💬 Family Chat!</h1>
-        <p>Connect with your family members and share your thoughts.</p>
-    </div>
+<!-- Page Header -->
+<div class="page-header-chat">
+    <h1><i class="fa-solid fa-comments me-2"></i>Family Chat</h1>
+    <p class="mb-0">Connect with your family members and share your thoughts.</p>
 </div>
 
-<hr class="mb-4">
-
 <!-- Message Board Section -->
-<div id="messageBoardPage" class="p-2 shadow container text-center mb2">
-    <!-- Messages Display -->
+<div class="card shadow-sm">
     <div id="messagesDisplay">
         {% for message in messages %}
             <div class="message-container {% if message.user_id == current_user.id %}sent-container{% else %}received-container{% endif %}">
                 {% if not message.deleted and (message.user_id == current_user.id or current_user.is_admin()) %}
-                    <button type="button" class="btn btn-danger btn-sm delete-btn" onclick="deleteMessage('/delete_message/{{ message.id }}')">
+                    <button type="button" class="btn btn-outline-danger btn-sm delete-btn" onclick="deleteMessage('/delete_message/{{ message.id }}')">
                         <i class="fas fa-trash"></i>
                     </button>
                 {% endif %}
@@ -204,7 +198,7 @@
                     </div>
                     <div class="message-body">
                         {% if message.deleted %}
-                            <i>🚫 Message deleted</i>
+                            <i><i class="fa-solid fa-ban me-1"></i>Message deleted</i>
                         {% else %}
                             {{ message.content }}
                         {% endif %}
@@ -216,15 +210,13 @@
             </div>
         {% endfor %}
     </div>
-    <br>
 
-    
     <!-- Send Message Form -->
-    <div id="messageFormContainer" class="mb-4">
-        <form id="messageForm" class="d-flex">
+    <div class="card-footer bg-white p-3">
+        <form id="messageForm" class="d-flex gap-2 align-items-end">
             {{ form.hidden_tag() }}
-            {{ form.content(class="form-control flex-grow-1", placeholder="Write your message here...", rows=3) }}
-            <button type="button" class="btn btn-primary" onclick="sendMessage()">
+            {{ form.content(class="form-control flex-grow-1", placeholder="Write your message here...", rows=2) }}
+            <button type="button" class="btn chat-send-btn" onclick="sendMessage()">
                 <i class="fas fa-paper-plane"></i>
             </button>
         </form>

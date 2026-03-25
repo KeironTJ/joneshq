@@ -1,147 +1,98 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div>
-    <div class="p-2 shadow bg-green text-center mb-4">
-        <h1>🍽️ Meal Detail</h1>
-    </div>
+<div class="page-header page-header-meals">
+    <h1><i class="fas fa-utensils me-2"></i>Meal Detail</h1>
 </div>
 
-<!-- View more details-->
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-12">
-            <div class="card shadow-sm mb-3">
-                <div class="card-header bg-soft-green text-center">
-                    <h4 class="mb-0">{{ meal.meal_title }}</h5>
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card mb-3">
+            <div class="card-header text-center" style="background:var(--meal-bg);">
+                <h4 class="mb-0" style="color:var(--meal-color);">{{ meal.meal_title }}</h4>
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <label class="form-label fw-bold d-block"><i class="fas fa-calendar-day me-1"></i> Date</label>
+                    <p>{{ meal.meal_date.strftime("%d-%m-%Y") }} — {{ meal.meal_date.strftime("%A") }}</p>
                 </div>
-
-                <div class="card-body text-center">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold d-block">📅 Date:</label>
-                        <p class="card-text">{{ meal.meal_date.strftime("%d-%m-%Y") }} - {{ meal.meal_date.strftime("%A") }}</p>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold d-block">📝 Description:</label>
-                        <p class="card-text">
-                            {% if meal.meal_description %}
-                                {{ meal.meal_description }}
-                            {% else %}
-                                <span class="badge bg-secondary">No description available</span>
-                            {% endif %}
-                        </p>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold d-block">🍴 Recipe:</label>
-                        <p class="card-text">
-                            {% if meal.meal_source %}
-                                {{ meal.meal_source }}
-                            {% else %}
-                                <span class="badge bg-secondary">No recipe available</span>
-                            {% endif %}
-                        </p>
-                    </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold d-block"><i class="fas fa-align-left me-1"></i> Description</label>
+                    <p>{% if meal.meal_description %}{{ meal.meal_description }}{% else %}<span class="text-muted">No description available</span>{% endif %}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold d-block"><i class="fas fa-book-open me-1"></i> Recipe</label>
+                    <p>{% if meal.meal_source %}{{ meal.meal_source }}{% else %}<span class="text-muted">No recipe available</span>{% endif %}</p>
                 </div>
             </div>
         </div>
+
+        <div class="action-bar">
+            <a href="{{ url_for('meal_planner.mealplanner') }}" class="btn btn-outline-primary"><i class="fas fa-arrow-left me-1"></i> Back</a>
+            <a href="#" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#editMealModal"><i class="fas fa-pen me-1"></i> Edit</a>
+            <a href="#" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteMealModal{{ meal.id }}"><i class="fas fa-trash me-1"></i> Delete</a>
+        </div>
     </div>
 </div>
-
-
-<div class = "text-center">
-    <div class="d-flex justify-content-between gap-2">
-        <a href="{{ url_for('meal_planner.mealplanner') }}" class="btn btn-primary flex-grow-1">🏠 Back</a>
-        <a href="#" class="btn btn-warning flex-grow-1" data-bs-toggle="modal" data-bs-target="#editMealModal">✏️ Edit</a>
-        <a href="#" class="btn btn-danger flex-grow-1" data-bs-toggle="modal" data-bs-target="#deleteMealModal{{ meal.id }}">
-            ❌ Delete
-        </a>
-    </div>
-</div>
-
-<hr class="mb-4">
-
 
 <!-- Delete Meal Modal -->
 <div class="modal fade" id="deleteMealModal{{ meal.id }}" tabindex="-1" aria-labelledby="deleteMealLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title">Delete Meal</h5>
+            <div class="modal-header modal-header-danger">
+                <h5 class="modal-title"><i class="fas fa-trash me-2"></i>Delete Meal</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <p>Are you sure you want to delete this meal entry?</p>
-                <strong>{{ meal.meal_date.strftime("%d-%m-%Y") }} - {{ meal.meal_title }}</strong>
+                <strong>{{ meal.meal_date.strftime("%d-%m-%Y") }} — {{ meal.meal_title }}</strong>
                 <form action="{{ url_for('meal_planner.delete_meal', meal_id=meal.id) }}" method="post">
-                    <div class="d-flex justify-content-end">
+                    <div class="d-flex justify-content-end mt-3">
+                        <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-danger">Yes, Delete</button>
-                        <button type="button" class="btn btn-secondary ms-2" data-bs-dismiss="modal">Cancel</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
-
 
 <!-- Edit Meal Modal -->
 <div class="modal fade" id="editMealModal" tabindex="-1" aria-labelledby="editMealModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header bg-green">
-                <h5 class="modal-title" id="editMealModalLabel">Edit Meal</h5>
+            <div class="modal-header modal-header-meals">
+                <h5 class="modal-title" id="editMealModalLabel"><i class="fas fa-pen me-2"></i>Edit Meal</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            
             <div class="modal-body">
                 <form id="editmealform" method="POST" action="{{ url_for('meal_planner.meal_details', meal_id=meal.id) }}">
                     {{ editmealform.hidden_tag() }}
-
                     <div class="mb-3">
-                        <label for="meal_date" class="form-label">Date:*</label>
+                        <label for="meal_date" class="form-label">Date *</label>
                         {{ editmealform.meal_date(class="form-control") }}
                     </div>
-
                     <div class="mb-3">
-                        <label for="meal_title" class="form-label">Meal Title:*</label>
+                        <label for="meal_title" class="form-label">Meal Title *</label>
                         {{ editmealform.meal_title(class="form-control") }}
-                        
                     </div>
-
                     <div class="mb-3">
-                        <label for="meal_description" class="form-label">Description:*</label>
+                        <label for="meal_description" class="form-label">Description</label>
                         {{ editmealform.meal_description(class="form-control") }}
-                        
                     </div>
-
                     <div class="mb-3">
-                        <label for="meal_source" class="form-label">Recipe:</label>
+                        <label for="meal_source" class="form-label">Recipe</label>
                         {{ editmealform.meal_source(class="form-control") }}
-                        
                     </div>
-
-
                     <div class="modal-footer">
-                        
-                        <button type="submit" class="btn btn-success w-100">
-                            Save Changes
-                        </button>
-
-                        <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal">
-                            Close
-                        </button>
-
-                    </div>                 
-
+                        <button type="submit" class="btn btn-success w-100">Save Changes</button>
+                        <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal">Close</button>
+                    </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
-
-
 
 {% endblock %}
 

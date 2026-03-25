@@ -2,180 +2,154 @@
 
 {% block content %}
 
-<div class="customdiv">
-    <h1>Admin - Families</h1>
+<!-- Page Header -->
+<div class="page-header-admin">
+    <h1><i class="fa-solid fa-people-roof me-2"></i>Admin &mdash; Families</h1>
+    <p class="mb-0">Manage family groups and memberships</p>
 </div>
 
-<div class="customdiv">
-    <h2>View all families</h2>
+<div class="container">
 
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Family Name</th>
-                <th>Invite Code</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            {% for family in families %}
-                <tr>
-                    <td>{{ family.id }}</td>
-                    <td>{{ family.name }}</td>
-                    <td>{{ family.invitation_code }}</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-
-<div class="customdiv">
-    <h2>View all family members</h2>
-
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Family ID</th>
-                <th>Family Name</th>
-                <th>User ID</th>
-                <th>User Name</th>
-                <th>Family Role</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            {% for family_member in family_members %}
-                <tr>
-                    <td>{{ family_member.id }}</td>
-                    <td>{{ family_member.family_id }}</td>
-                    <td>{{ family_member.family.name }}</td>
-                    <td>{{ family_member.user_id }}</td>
-                    <td>{{ family_member.user.username }}</td>
-                    <td>{{ family_member.role_in_family }}</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-
-<!-- Add Family Form -->
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow-lg">
-                <div class="card-body p-4">
-                    <div class="customdiv">
-                        <h2>Add Family</h2>
-                        <!-- Add Family Form -->
-                        <form method="POST" action="{{ url_for('admin.add_family') }}">
-                            {{ create_family_form.hidden_tag() }}
-                            <div class="mb-3">
-                                {{ create_family_form.family_name.label(class="form-label") }}
-                                {{ create_family_form.family_name(class="form-control") }}
-                            </div>
-                            {{ create_family_form.submit(class="btn btn-primary w-100") }}
-                        </form>
-                    </div>
-                </div>
-            </div>
+    <!-- All Families Table -->
+    <div class="admin-section">
+        <h4><i class="fa-solid fa-house-chimney me-2"></i>All Families</h4>
+        <div class="table-responsive">
+            <table class="table-fhq">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Family Name</th>
+                        <th>Invite Code</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for family in families %}
+                        <tr>
+                            <td>{{ family.id }}</td>
+                            <td>{{ family.name }}</td>
+                            <td><code>{{ family.invitation_code }}</code></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
-</div>
 
-<!-- Add User to Family -->
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow-lg">
-                <div class="card-body p-4">
-                    <div class="customdiv">
-                        <h2>Add User to Family</h2>
-                        <!-- Add User to Family Form -->
-                        <form method="POST" action="{{ url_for('admin.add_user_to_family') }}">
-                            {{ add_user_form.hidden_tag() }}
-                            <div class="mb-3">
-                                {{ add_user_form.family_id.label(class="form-label") }}
-                                {{ add_user_form.family_id(class="form-select") }}
-                            </div>
-
-                            <div class="mb-3">
-                                {{ add_user_form.user_id.label(class="form-label") }}
-                                {{ add_user_form.user_id(class="form-select") }}
-                            </div>
-
-                            <div class="mb-3">
-                                {{ add_user_form.role_in_family.label(class="form-label") }}
-                                {{ add_user_form.role_in_family(class="form-select") }}
-                            </div>
-
-                            {{ add_user_form.submit(class="btn btn-primary w-100") }}
-                        </form>
-                        
-                    </div>
-                </div>
-            </div>
+    <!-- All Family Members Table -->
+    <div class="admin-section">
+        <h4><i class="fa-solid fa-users me-2"></i>All Family Members</h4>
+        <div class="table-responsive">
+            <table class="table-fhq">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Family ID</th>
+                        <th>Family Name</th>
+                        <th>User ID</th>
+                        <th>User Name</th>
+                        <th>Family Role</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for family_member in family_members %}
+                        <tr>
+                            <td>{{ family_member.id }}</td>
+                            <td>{{ family_member.family_id }}</td>
+                            <td>{{ family_member.family.name }}</td>
+                            <td>{{ family_member.user_id }}</td>
+                            <td>{{ family_member.user.username }}</td>
+                            <td>{{ family_member.role_in_family }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
-</div>
 
-<!-- Delete Family -->
-<div class="container mt-5">
-    <div class="row justify-content-center">
+    <!-- Admin Action Forms -->
+    <div class="row g-4">
+
+        <!-- Add Family -->
         <div class="col-md-6">
-            <div class="card shadow-lg">
-                <div class="card-body p-4">
-                    <div class="customdiv">
-                        <h2>Delete Family</h2>
-                        <form method="POST" action="{{ url_for('admin.delete_family') }}">
-                            {{ delete_family_form.hidden_tag() }}
-                            <div class="mb-3">
-                                {{ delete_family_form.family_id.label(class="form-label") }}
-                                {{ delete_family_form.family_id(class="form-select") }}
-                            </div>
-                            {{ delete_family_form.submit(class="btn btn-danger w-100") }}
-                        </form>
+            <div class="admin-section h-100">
+                <h4><i class="fa-solid fa-plus me-2"></i>Add Family</h4>
+                <form method="POST" action="{{ url_for('admin.add_family') }}">
+                    {{ create_family_form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ create_family_form.family_name.label(class="form-label fw-bold") }}
+                        {{ create_family_form.family_name(class="form-control") }}
                     </div>
-                </div>
+                    {{ create_family_form.submit(class="btn btn-primary w-100") }}
+                </form>
             </div>
         </div>
-    </div>
-</div>
 
-<!-- Reassign Family Owner -->
-<div class="container mt-5">
-    <div class="row justify-content-center">
+        <!-- Add User to Family -->
         <div class="col-md-6">
-            <div class="card shadow-lg">
-                <div class="card-body p-4">
-                    <div class="customdiv">
-                        <h2>Reassign Family Owner</h2>
-                        <form method="POST" action="{{ url_for('admin.reassign_family_owner') }}">
-                            {{ transfer_family_form.hidden_tag() }}
-                            <div class="mb-3">
-                                {{ transfer_family_form.family_id.label(class="form-label") }}
-                                {{ transfer_family_form.family_id(class="form-select") }}
-                            </div>
-                            <div class="mb-3">
-                                {{ transfer_family_form.new_owner_id.label(class="form-label") }}
-                                {{ transfer_family_form.new_owner_id(class="form-select") }}
-                            </div>
-                            {{ transfer_family_form.submit(class="btn btn-warning w-100") }}
-                        </form>
+            <div class="admin-section h-100">
+                <h4><i class="fa-solid fa-user-plus me-2"></i>Add User to Family</h4>
+                <form method="POST" action="{{ url_for('admin.add_user_to_family') }}">
+                    {{ add_user_form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ add_user_form.family_id.label(class="form-label fw-bold") }}
+                        {{ add_user_form.family_id(class="form-select") }}
                     </div>
-                </div>
+                    <div class="mb-3">
+                        {{ add_user_form.user_id.label(class="form-label fw-bold") }}
+                        {{ add_user_form.user_id(class="form-select") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ add_user_form.role_in_family.label(class="form-label fw-bold") }}
+                        {{ add_user_form.role_in_family(class="form-select") }}
+                    </div>
+                    {{ add_user_form.submit(class="btn btn-primary w-100") }}
+                </form>
             </div>
         </div>
+
+        <!-- Delete Family -->
+        <div class="col-md-6">
+            <div class="admin-section h-100">
+                <h4><i class="fa-solid fa-trash me-2"></i>Delete Family</h4>
+                <form method="POST" action="{{ url_for('admin.delete_family') }}">
+                    {{ delete_family_form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ delete_family_form.family_id.label(class="form-label fw-bold") }}
+                        {{ delete_family_form.family_id(class="form-select") }}
+                    </div>
+                    {{ delete_family_form.submit(class="btn btn-danger w-100") }}
+                </form>
+            </div>
+        </div>
+
+        <!-- Reassign Family Owner -->
+        <div class="col-md-6">
+            <div class="admin-section h-100">
+                <h4><i class="fa-solid fa-right-left me-2"></i>Reassign Family Owner</h4>
+                <form method="POST" action="{{ url_for('admin.reassign_family_owner') }}">
+                    {{ transfer_family_form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ transfer_family_form.family_id.label(class="form-label fw-bold") }}
+                        {{ transfer_family_form.family_id(class="form-select") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ transfer_family_form.new_owner_id.label(class="form-label fw-bold") }}
+                        {{ transfer_family_form.new_owner_id(class="form-select") }}
+                    </div>
+                    {{ transfer_family_form.submit(class="btn btn-accent w-100") }}
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Back Button -->
+    <div class="action-bar">
+        <a href="{{ url_for('admin.admin_home') }}" class="btn btn-outline-secondary">
+            <i class="fa-solid fa-arrow-left me-1"></i> Back to Admin
+        </a>
+        <div></div>
     </div>
 </div>
-
-<br>
-                
-<div>
-    <a href="{{ url_for('admin.admin_home') }}" class="btn btn-primary">Go back</a>
-
-</div>
-
 
 {% endblock %}
