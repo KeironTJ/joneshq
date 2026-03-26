@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="week-planner-header">
+    <div class="week-nav">
+        <div class="week-nav-title">
+            <h1><i class="fas fa-cog me-2"></i>Health Settings</h1>
+            <p>Manage your tracking categories &amp; goals.</p>
+        </div>
+        <a href="{{ url_for('health.health_dashboard') }}" class="week-nav-btn" title="Back to dashboard">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+    </div>
+</div>
+
+<!-- Add New Category -->
+<div class="widget mb-4">
+    <div class="widget-header" style="background: var(--health-color)">
+        <i class="fas fa-plus me-2"></i> Add Custom Category
+    </div>
+    <div class="widget-body">
+        <form method="POST" action="{{ url_for('health.health_settings') }}">
+            {{ form.hidden_tag() }}
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Label *</label>
+                    {{ form.label(class="form-control", placeholder="e.g. Cycling") }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Unit *</label>
+                    {{ form.unit(class="form-control", placeholder="e.g. km") }}
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Icon</label>
+                    {{ form.icon(class="form-select") }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Colour</label>
+                    {{ form.color(class="form-select") }}
+                </div>
+            </div>
+            <div class="row g-3 mt-1">
+                <div class="col-md-3">
+                    <label class="form-label">Aggregation</label>
+                    {{ form.aggregation(class="form-select") }}
+                    <small class="form-text text-muted">Sum = total per day, Latest = last entry wins</small>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Daily Goal</label>
+                    {{ form.daily_goal(class="form-control", placeholder="Optional") }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Sort Order</label>
+                    {{ form.sort_order(class="form-control") }}
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-health w-100"><i class="fas fa-plus me-1"></i> Add Category</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Existing Categories -->
+<div class="widget">
+    <div class="widget-header" style="background: var(--health-color)">
+        <i class="fas fa-list me-2"></i> Your Categories
+    </div>
+    <div class="widget-body p-0">
+        {% if categories %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th style="width:50px"></th>
+                        <th>Label</th>
+                        <th>Unit</th>
+                        <th>Aggregation</th>
+                        <th>Daily Goal</th>
+                        <th>Order</th>
+                        <th>Status</th>
+                        <th style="width:140px">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cat in categories %}
+                    <tr class="{% if not cat.active %}text-muted{% endif %}">
+                        <td><i class="fas {{ cat.icon }}" style="color: {{ cat.color }}; font-size:1.2rem;"></i></td>
+                        <td><strong>{{ cat.label }}</strong><br><small class="text-muted">{{ cat.key }}</small></td>
+                        <td>{{ cat.unit }}</td>
+                        <td><span class="badge bg-{{ 'success' if cat.aggregation == 'sum' else 'info' }}">{{ cat.aggregation|capitalize }}</span></td>
+                        <td>{% if cat.daily_goal %}{{ cat.daily_goal|round(1) }} {{ cat.unit }}{% else %}—{% endif %}</td>
+                        <td>{{ cat.sort_order }}</td>
+                        <td>
+                            {% if cat.active %}
+                                <span class="badge bg-success">Active</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Hidden</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <a href="{{ url_for('health.edit_category', id=cat.id) }}" class="btn btn-sm btn-outline-primary" title="Edit">
+                                    <i class="fas fa-pen"></i>
+                                </a>
+                                <form method="POST" action="{{ url_for('health.toggle_category', id=cat.id) }}" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-{{ 'warning' if cat.active else 'success' }}" title="{{ 'Hide' if cat.active else 'Show' }}">
+                                        <i class="fas fa-{{ 'eye-slash' if cat.active else 'eye' }}"></i>
+                                    </button>
+                                </form>
+                                <form method="POST" action="{{ url_for('health.delete_category', id=cat.id) }}" class="d-inline" onsubmit="return confirm('Delete {{ cat.label }}? This won\'t remove existing logs.')">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="widget-empty py-5">
+            <i class="fas fa-cog"></i>
+            <p>No categories yet. Add one above or visit the dashboard to auto-generate defaults.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

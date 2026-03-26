@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="week-planner-header">
+    <div class="week-nav">
+        <a href="{{ url_for('rewards.rewards_hub') }}" class="week-nav-btn" title="Back to Hub">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div class="week-nav-title">
+            <h1><i class="fas fa-history me-2"></i>Points History</h1>
+            <p>Full audit trail of all points earned and spent.</p>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-bar">
+        <form method="GET" action="{{ url_for('rewards.points_history') }}" class="filter-form">
+            {% if is_parent %}
+            <div class="filter-group">
+                <label class="filter-label">Member</label>
+                <select name="member" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="0">All Members</option>
+                    {% for uid, uname in members %}
+                    <option value="{{ uid }}" {% if member_filter == uid %}selected{% endif %}>{{ uname }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            <div class="filter-group">
+                <label class="filter-label">Source</label>
+                <select name="source" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">All Sources</option>
+                    <option value="chore" {% if source_filter == 'chore' %}selected{% endif %}>Chores</option>
+                    <option value="achievement" {% if source_filter == 'achievement' %}selected{% endif %}>Achievements</option>
+                    <option value="behaviour" {% if source_filter == 'behaviour' %}selected{% endif %}>Behaviour</option>
+                    <option value="redemption" {% if source_filter == 'redemption' %}selected{% endif %}>Redemptions</option>
+                    <option value="refund" {% if source_filter == 'refund' %}selected{% endif %}>Refunds</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Period</label>
+                <select name="days" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="7" {% if days_filter == 7 %}selected{% endif %}>Last 7 days</option>
+                    <option value="30" {% if days_filter == 30 %}selected{% endif %}>Last 30 days</option>
+                    <option value="90" {% if days_filter == 90 %}selected{% endif %}>Last 3 months</option>
+                    <option value="365" {% if days_filter == 365 %}selected{% endif %}>Last year</option>
+                    <option value="0" {% if days_filter == 0 %}selected{% endif %}>All time</option>
+                </select>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Summary cards -->
+<div class="points-summary-bar">
+    <div class="points-summary-card points-summary-earned">
+        <i class="fas fa-arrow-up me-1"></i>
+        <span>Earned: <strong>+{{ total_earned }}</strong></span>
+    </div>
+    <div class="points-summary-card points-summary-spent">
+        <i class="fas fa-arrow-down me-1"></i>
+        <span>Spent: <strong>{{ total_spent }}</strong></span>
+    </div>
+    <div class="points-summary-card points-summary-net">
+        <i class="fas fa-equals me-1"></i>
+        <span>Net: <strong>{{ total_earned + total_spent }}</strong></span>
+    </div>
+</div>
+
+<!-- Points entries -->
+<div class="week-planner">
+    {% if entries %}
+        {% set current_date = namespace(value='') %}
+        {% for entry in entries %}
+            {% set entry_date = entry.created_at.strftime('%A, %d %B %Y') %}
+            {% if entry_date != current_date.value %}
+                {% set current_date.value = entry_date %}
+                <div class="points-date-header">
+                    <i class="fas fa-calendar-day me-1"></i> {{ entry_date }}
+                </div>
+            {% endif %}
+            <div class="points-activity-row">
+                <div class="points-activity-left">
+                    {% set source_icons = {'chore': 'fa-broom', 'achievement': 'fa-medal', 'behaviour': 'fa-chart-line', 'redemption': 'fa-gift', 'refund': 'fa-undo', 'bonus': 'fa-plus-circle'} %}
+                    {% set source_bgs = {'chore': 'bg-chore', 'achievement': 'bg-achievement', 'behaviour': 'bg-behaviour', 'redemption': 'bg-reward', 'refund': 'bg-reward'} %}
+                    <div class="widget-item-icon {{ source_bgs.get(entry.source_type, 'bg-chore') }}">
+                        <i class="fas {{ source_icons.get(entry.source_type, 'fa-coins') }}"></i>
+                    </div>
+                    <div class="points-activity-info">
+                        <strong>{{ entry.description or entry.source_type|capitalize }}</strong>
+                        <small>
+                            <i class="fas fa-user me-1"></i>
+                            {% set entry_user = entry.user_id %}
+                            {% for uid, uname in members %}
+                                {% if uid == entry_user %}{{ uname }}{% endif %}
+                            {% endfor %}
+                            · {{ entry.created_at.strftime('%H:%M') }}
+                            · <span class="badge bg-light text-dark" style="font-size:0.65rem;">{{ entry.source_type|capitalize }}</span>
+                        </small>
+                    </div>
+                </div>
+                <span class="{% if entry.points >= 0 %}points-badge{% else %}points-badge points-badge-spent{% endif %}">
+                    {{ '+' if entry.points > 0 else '' }}{{ entry.points }} pts
+                </span>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="widget-empty py-5">
+            <i class="fas fa-history"></i>
+            <p>No points activity found for the selected filters.</p>
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}

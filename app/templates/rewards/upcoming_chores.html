@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="week-planner-header">
+    <div class="week-nav">
+        <a href="{{ url_for('rewards.chores') }}" class="week-nav-btn" title="Back to Chores">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div class="week-nav-title">
+            <h1><i class="fas fa-calendar-alt me-2"></i>Upcoming Chores</h1>
+            <p>Planned and projected chores to help you get ahead.</p>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-bar">
+        <form method="GET" action="{{ url_for('rewards.upcoming_chores') }}" class="filter-form">
+            <div class="filter-group">
+                <label class="filter-label">Member</label>
+                <select name="member" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="0">Everyone</option>
+                    {% for uid, uname in members %}
+                    <option value="{{ uid }}" {% if member_filter == uid %}selected{% endif %}>{{ uname }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Look ahead</label>
+                <select name="weeks" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="1" {% if weeks_ahead == 1 %}selected{% endif %}>1 week</option>
+                    <option value="2" {% if weeks_ahead == 2 %}selected{% endif %}>2 weeks</option>
+                    <option value="4" {% if weeks_ahead == 4 %}selected{% endif %}>4 weeks</option>
+                    <option value="8" {% if weeks_ahead == 8 %}selected{% endif %}>8 weeks</option>
+                </select>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Legend -->
+<div class="upcoming-legend">
+    <span class="legend-item"><span class="legend-dot legend-dot-existing"></span> Existing chore</span>
+    <span class="legend-item"><span class="legend-dot legend-dot-projected"></span> Projected (recurring)</span>
+</div>
+
+<!-- Schedule -->
+<div class="week-planner">
+    {% if grouped %}
+        {% for due_date, items in grouped|dictsort %}
+        <div class="upcoming-date-section">
+            <div class="upcoming-date-header {% if due_date == today %}upcoming-today{% endif %}">
+                <i class="fas fa-calendar-day me-1"></i>
+                {{ due_date.strftime('%A, %d %B') }}
+                {% if due_date == today %}<span class="badge bg-primary ms-1">Today</span>{% endif %}
+                {% set day_diff = (due_date - today).days %}
+                {% if day_diff == 1 %}<span class="badge bg-info ms-1">Tomorrow</span>{% endif %}
+                {% if day_diff > 1 %}<span class="text-muted ms-1" style="font-size:0.75rem;">(in {{ day_diff }} days)</span>{% endif %}
+            </div>
+            {% for item in items %}
+            <div class="chore-row {% if item.is_projected %}chore-projected{% endif %}">
+                <div class="chore-row-left">
+                    {% if item.is_projected %}
+                    <span class="chore-projected-icon" title="Projected from recurring pattern">
+                        <i class="fas fa-clock"></i>
+                    </span>
+                    {% else %}
+                    <span class="chore-existing-icon" title="Existing chore">
+                        <i class="fas fa-circle"></i>
+                    </span>
+                    {% endif %}
+                    <div class="chore-info">
+                        <strong>{{ item.title }}</strong>
+                        <small>
+                            <i class="fas fa-user me-1"></i>{{ item.assignee_name }}
+                            {% if item.recurring != 'none' %} · <i class="fas fa-sync-alt"></i> {{ item.recurring|capitalize }}{% endif %}
+                            {% if item.description %} · {{ item.description[:50] }}{% endif %}
+                        </small>
+                    </div>
+                </div>
+                <div class="chore-row-right">
+                    {% if item.points %}
+                    <span class="points-badge">+{{ item.points }}</span>
+                    {% endif %}
+                    {% if not item.is_projected and item.get('id') %}
+                    <form method="post" action="{{ url_for('rewards.complete_chore', id=item.id) }}" class="d-inline">
+                        <button type="submit" class="chore-check" title="Mark complete">
+                            <i class="far fa-circle"></i>
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="widget-empty py-5">
+            <i class="fas fa-calendar-check"></i>
+            <p>No upcoming chores in this period.</p>
+            <a href="{{ url_for('rewards.chores') }}" class="btn btn-sm btn-outline-primary">Back to Chores</a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Summary -->
+{% if schedule %}
+<div class="upcoming-summary-bar">
+    <div class="upcoming-summary-item">
+        <strong>{{ schedule|length }}</strong> total chores
+    </div>
+    <div class="upcoming-summary-item">
+        <strong>{{ schedule|selectattr('is_projected')|list|length }}</strong> projected
+    </div>
+    <div class="upcoming-summary-item">
+        <strong>{{ schedule|rejectattr('is_projected')|list|length }}</strong> existing
+    </div>
+    <div class="upcoming-summary-item">
+        <strong>{{ schedule|map(attribute='points')|sum }}</strong> total points available
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

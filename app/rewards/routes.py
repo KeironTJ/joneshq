@@ -1,5 +1,5 @@
 from app.rewards import bp
-from flask import render_template, request, redirect, url_for, flash
+from flask import render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from app import db
 from app.decorators import active_family_required
@@ -10,7 +10,7 @@ from app.models import (
 from app.rewards.forms import ChoreForm, AchievementForm, RewardForm, BehaviourForm
 from datetime import datetime, date, timedelta
 from collections import defaultdict
-from sqlalchemy import func
+from sqlalchemy import func, and_
 
 
 def _family_members():
@@ -130,6 +130,44 @@ def rewards_hub():
     my_points = _user_points(current_user.id, family.id)
     is_parent = _is_parent()
 
+    # Child summary cards for parents
+    child_summaries = []
+    if is_parent:
+        children = _child_members(family.id)
+        today_date = date.today()
+        start_of_week = today_date - timedelta(days=today_date.weekday())
+        for child in children:
+            pts = _user_points(child.id, family.id)
+            week_pts = db.session.query(
+                func.coalesce(func.sum(PointsLedger.points), 0)
+            ).filter(
+                PointsLedger.user_id == child.id,
+                PointsLedger.family_id == family.id,
+                PointsLedger.created_at >= start_of_week.isoformat()
+            ).scalar()
+            pending = Chore.query.filter(
+                Chore.family_id == family.id,
+                Chore.status == 'pending',
+                Chore.assigned_to == child.id
+            ).count()
+            streak = _calculate_streak(child.id, family.id)
+            # Behaviour this week
+            week_beh = BehaviourEntry.query.filter(
+                BehaviourEntry.family_id == family.id,
+                BehaviourEntry.user_id == child.id,
+                BehaviourEntry.date >= start_of_week,
+                BehaviourEntry.date <= today_date
+            ).all()
+            beh_avg = round(sum(e.rating for e in week_beh) / len(week_beh), 1) if week_beh else None
+            child_summaries.append({
+                'child': child,
+                'total_points': pts,
+                'week_points': week_pts,
+                'pending_chores': pending,
+                'streak': streak,
+                'behaviour_avg': beh_avg
+            })
+
     return render_template('rewards/rewards_hub.html',
                            title='Rewards Hub',
                            pending_chores=pending_chores,
@@ -141,7 +179,8 @@ def rewards_hub():
                            available_rewards=available_rewards,
                            leaderboard=leaderboard,
                            my_points=my_points,
-                           is_parent=is_parent)
+                           is_parent=is_parent,
+                           child_summaries=child_summaries)
 
 
 # ========== CHORES ==========
@@ -731,3 +770,433 @@ def delete_behaviour(id):
     db.session.commit()
     flash('Behaviour entry deleted.', 'danger')
     return redirect(url_for('rewards.behaviour'))
+
+
+# ========== CHILD DASHBOARD (Parent View) ==========
+
+def _child_members(family_id):
+    """Return child members (role == 'member') in the family."""
+    fms = FamilyMembers.query.filter_by(family_id=family_id, role_in_family='member').all()
+    child_ids = [fm.user_id for fm in fms]
+    if not child_ids:
+        # Fallback: all members
+        fms = FamilyMembers.query.filter_by(family_id=family_id).all()
+        child_ids = [fm.user_id for fm in fms]
+    return User.query.filter(User.id.in_(child_ids)).order_by(User.username).all()
+
+
+def _calculate_streak(user_id, family_id):
+    """Calculate the current chore completion streak (consecutive days)."""
+    completed = db.session.query(
+        func.date(Chore.completed_at)
+    ).filter(
+        Chore.family_id == family_id,
+        Chore.status == 'completed',
+        and_(
+            Chore.completed_by == user_id,
+            Chore.completed_at.isnot(None)
+        )
+    ).distinct().order_by(func.date(Chore.completed_at).desc()).all()
+
+    if not completed:
+        return 0
+
+    dates = sorted(set(row[0] for row in completed if row[0]), reverse=True)
+    if not dates:
+        return 0
+
+    streak = 1
+    for i in range(1, len(dates)):
+        prev = dates[i - 1]
+        curr = dates[i]
+        if isinstance(prev, str):
+            prev = date.fromisoformat(prev)
+        if isinstance(curr, str):
+            curr = date.fromisoformat(curr)
+        if (prev - curr).days == 1:
+            streak += 1
+        else:
+            break
+    return streak
+
+
+@bp.route('/rewards/child/<int:user_id>')
+@login_required
+@active_family_required
+def child_dashboard(user_id):
+    """Comprehensive parent view of a child's rewards activity."""
+    if not _is_parent():
+        flash('Only parents can view child dashboards.', 'warning')
+        return redirect(url_for('rewards.rewards_hub'))
+
+    family = current_user.get_active_family()
+    child = User.query.get_or_404(user_id)
+
+    # Verify child is in this family
+    fm = FamilyMembers.query.filter_by(user_id=user_id, family_id=family.id).first()
+    if not fm:
+        flash('This user is not in your family.', 'danger')
+        return redirect(url_for('rewards.rewards_hub'))
+
+    # Points
+    total_points = _user_points(user_id, family.id)
+
+    # Points breakdown by source
+    points_by_source = db.session.query(
+        PointsLedger.source_type,
+        func.coalesce(func.sum(PointsLedger.points), 0)
+    ).filter_by(
+        user_id=user_id, family_id=family.id
+    ).group_by(PointsLedger.source_type).all()
+    points_breakdown = dict(points_by_source)
+
+    # Recent points activity (last 20)
+    recent_points = PointsLedger.query.filter_by(
+        user_id=user_id, family_id=family.id
+    ).order_by(PointsLedger.created_at.desc()).limit(20).all()
+
+    # Points earned per week (last 8 weeks)
+    eight_weeks_ago = date.today() - timedelta(weeks=8)
+    weekly_points = db.session.query(
+        func.strftime('%Y-%W', PointsLedger.created_at).label('week'),
+        func.sum(PointsLedger.points).label('total')
+    ).filter(
+        PointsLedger.user_id == user_id,
+        PointsLedger.family_id == family.id,
+        PointsLedger.created_at >= eight_weeks_ago.isoformat()
+    ).group_by('week').order_by('week').all()
+
+    # Chore stats
+    chores_completed = Chore.query.filter_by(
+        family_id=family.id, status='completed', completed_by=user_id
+    ).count()
+    chores_pending = Chore.query.filter(
+        Chore.family_id == family.id,
+        Chore.status == 'pending',
+        Chore.assigned_to == user_id
+    ).count()
+    chores_awaiting = Chore.query.filter_by(
+        family_id=family.id, status='awaiting_approval', completed_by=user_id
+    ).count()
+
+    # Recent completed chores
+    recent_chores = Chore.query.filter_by(
+        family_id=family.id, status='completed', completed_by=user_id
+    ).order_by(Chore.completed_at.desc()).limit(10).all()
+
+    # Streak
+    streak = _calculate_streak(user_id, family.id)
+
+    # Behaviour stats (last 30 days)
+    thirty_days_ago = date.today() - timedelta(days=30)
+    behaviour_entries = BehaviourEntry.query.filter(
+        BehaviourEntry.family_id == family.id,
+        BehaviourEntry.user_id == user_id,
+        BehaviourEntry.date >= thirty_days_ago
+    ).order_by(BehaviourEntry.date.desc()).all()
+
+    behaviour_avg = None
+    if behaviour_entries:
+        behaviour_avg = round(sum(e.rating for e in behaviour_entries) / len(behaviour_entries), 1)
+
+    # Achievements
+    achievements = Achievement.query.filter_by(
+        family_id=family.id, user_id=user_id
+    ).order_by(Achievement.date_earned.desc()).all()
+
+    # Redemptions
+    redemptions = db.session.query(RewardRedemption).join(Reward).filter(
+        Reward.family_id == family.id,
+        RewardRedemption.user_id == user_id
+    ).order_by(RewardRedemption.redeemed_at.desc()).limit(10).all()
+
+    # All children for nav tabs
+    children = _child_members(family.id)
+
+    return render_template('rewards/child_dashboard.html',
+                           title=f"{child.username}'s Dashboard",
+                           child=child,
+                           children=children,
+                           total_points=total_points,
+                           points_breakdown=points_breakdown,
+                           recent_points=recent_points,
+                           weekly_points=weekly_points,
+                           chores_completed=chores_completed,
+                           chores_pending=chores_pending,
+                           chores_awaiting=chores_awaiting,
+                           recent_chores=recent_chores,
+                           streak=streak,
+                           behaviour_entries=behaviour_entries,
+                           behaviour_avg=behaviour_avg,
+                           achievements=achievements,
+                           redemptions=redemptions,
+                           is_parent=True)
+
+
+# ========== POINTS HISTORY ==========
+
+@bp.route('/rewards/points-history')
+@login_required
+@active_family_required
+def points_history():
+    """Full audit trail of point transactions with filters."""
+    family = current_user.get_active_family()
+    is_parent = _is_parent()
+    members = _family_members()
+
+    member_filter = request.args.get('member', 0, type=int)
+    source_filter = request.args.get('source', '')
+    days_filter = request.args.get('days', 30, type=int)
+
+    query = PointsLedger.query.filter_by(family_id=family.id)
+
+    if not is_parent:
+        # Non-parents only see their own history
+        query = query.filter_by(user_id=current_user.id)
+    elif member_filter:
+        query = query.filter_by(user_id=member_filter)
+
+    if source_filter:
+        query = query.filter_by(source_type=source_filter)
+
+    if days_filter > 0:
+        cutoff = datetime.utcnow() - timedelta(days=days_filter)
+        query = query.filter(PointsLedger.created_at >= cutoff)
+
+    entries = query.order_by(PointsLedger.created_at.desc()).limit(200).all()
+
+    # Summary stats
+    total_earned = sum(e.points for e in entries if e.points > 0)
+    total_spent = sum(e.points for e in entries if e.points < 0)
+
+    return render_template('rewards/points_history.html',
+                           title='Points History',
+                           entries=entries,
+                           members=members,
+                           member_filter=member_filter,
+                           source_filter=source_filter,
+                           days_filter=days_filter,
+                           total_earned=total_earned,
+                           total_spent=total_spent,
+                           is_parent=is_parent)
+
+
+# ========== UPCOMING CHORES ==========
+
+@bp.route('/rewards/upcoming')
+@login_required
+@active_family_required
+def upcoming_chores():
+    """Show future scheduled chores from recurring patterns."""
+    family = current_user.get_active_family()
+    is_parent = _is_parent()
+    members = _family_members()
+    member_filter = request.args.get('member', 0, type=int)
+    weeks_ahead = request.args.get('weeks', 2, type=int)
+    weeks_ahead = min(max(weeks_ahead, 1), 8)  # clamp 1-8
+
+    today = date.today()
+    end_date = today + timedelta(weeks=weeks_ahead)
+
+    # Get existing pending chores with due dates
+    pending_query = Chore.query.filter(
+        Chore.family_id == family.id,
+        Chore.status == 'pending',
+        Chore.due_date.isnot(None),
+        Chore.due_date >= today,
+        Chore.due_date <= end_date
+    )
+    if member_filter:
+        pending_query = pending_query.filter(
+            (Chore.assigned_to == member_filter) | (Chore.assigned_to.is_(None))
+        )
+    existing_chores = pending_query.order_by(Chore.due_date.asc()).all()
+
+    # Project future occurrences from the latest recurring chore of each "series"
+    # Find the latest pending or completed recurring chore per title+assignee
+    recurring_bases = db.session.query(
+        Chore.title,
+        Chore.assigned_to,
+        Chore.points,
+        Chore.recurring,
+        Chore.description,
+        func.max(Chore.due_date).label('latest_due')
+    ).filter(
+        Chore.family_id == family.id,
+        Chore.recurring != 'none',
+        Chore.due_date.isnot(None)
+    ).group_by(Chore.title, Chore.assigned_to, Chore.points, Chore.recurring, Chore.description).all()
+
+    projected = []
+    existing_keys = set()
+    for c in existing_chores:
+        existing_keys.add((c.title, c.assigned_to, str(c.due_date)))
+
+    for base in recurring_bases:
+        if member_filter and base.assigned_to and base.assigned_to != member_filter:
+            continue
+        latest = base.latest_due
+        if isinstance(latest, str):
+            latest = date.fromisoformat(latest)
+        # Generate future dates
+        current_date = latest
+        for _ in range(50):  # safety limit
+            if base.recurring == 'daily':
+                current_date = current_date + timedelta(days=1)
+            elif base.recurring == 'weekly':
+                current_date = current_date + timedelta(weeks=1)
+            elif base.recurring == 'monthly':
+                m = current_date.month + 1
+                y = current_date.year
+                if m > 12:
+                    m = 1
+                    y += 1
+                day = min(current_date.day, 28)
+                current_date = current_date.replace(year=y, month=m, day=day)
+            else:
+                break
+
+            if current_date > end_date:
+                break
+            if current_date < today:
+                continue
+            key = (base.title, base.assigned_to, str(current_date))
+            if key not in existing_keys:
+                assignee = User.query.get(base.assigned_to) if base.assigned_to else None
+                projected.append({
+                    'title': base.title,
+                    'description': base.description,
+                    'assigned_to': base.assigned_to,
+                    'assignee_name': assignee.username if assignee else 'Unassigned',
+                    'points': base.points,
+                    'recurring': base.recurring,
+                    'due_date': current_date,
+                    'is_projected': True
+                })
+
+    # Combine and sort by date
+    schedule = []
+    for c in existing_chores:
+        schedule.append({
+            'title': c.title,
+            'description': c.description,
+            'assigned_to': c.assigned_to,
+            'assignee_name': c.assignee.username if c.assignee else 'Unassigned',
+            'points': c.points,
+            'recurring': c.recurring,
+            'due_date': c.due_date,
+            'is_projected': False,
+            'id': c.id
+        })
+    schedule.extend(projected)
+    schedule.sort(key=lambda x: x['due_date'])
+
+    # Group by date
+    grouped = defaultdict(list)
+    for item in schedule:
+        grouped[item['due_date']].append(item)
+
+    return render_template('rewards/upcoming_chores.html',
+                           title='Upcoming Chores',
+                           grouped=grouped,
+                           schedule=schedule,
+                           members=members,
+                           member_filter=member_filter,
+                           weeks_ahead=weeks_ahead,
+                           today=today,
+                           end_date=end_date,
+                           is_parent=is_parent)
+
+
+# ========== WEEKLY SUMMARY ==========
+
+@bp.route('/rewards/summary')
+@login_required
+@active_family_required
+def weekly_summary():
+    """Weekly summary report for parents showing each child's activity."""
+    if not _is_parent():
+        flash('Only parents can view the weekly summary.', 'warning')
+        return redirect(url_for('rewards.rewards_hub'))
+
+    family = current_user.get_active_family()
+    week_offset = request.args.get('week', 0, type=int)
+    today = date.today()
+    start_of_week = today - timedelta(days=today.weekday()) + timedelta(weeks=week_offset)
+    end_of_week = start_of_week + timedelta(days=6)
+
+    children = _child_members(family.id)
+    summaries = []
+
+    for child in children:
+        # Points earned this week
+        week_points = db.session.query(
+            func.coalesce(func.sum(PointsLedger.points), 0)
+        ).filter(
+            PointsLedger.user_id == child.id,
+            PointsLedger.family_id == family.id,
+            PointsLedger.created_at >= start_of_week.isoformat(),
+            PointsLedger.created_at <= (end_of_week + timedelta(days=1)).isoformat()
+        ).scalar()
+
+        # Chores completed this week
+        chores_done = Chore.query.filter(
+            Chore.family_id == family.id,
+            Chore.status == 'completed',
+            Chore.completed_by == child.id,
+            Chore.completed_at >= start_of_week.isoformat(),
+            Chore.completed_at <= (end_of_week + timedelta(days=1)).isoformat()
+        ).count()
+
+        # Behaviour average this week
+        week_behaviour = BehaviourEntry.query.filter(
+            BehaviourEntry.family_id == family.id,
+            BehaviourEntry.user_id == child.id,
+            BehaviourEntry.date >= start_of_week,
+            BehaviourEntry.date <= end_of_week
+        ).all()
+        beh_avg = None
+        if week_behaviour:
+            beh_avg = round(sum(e.rating for e in week_behaviour) / len(week_behaviour), 1)
+
+        # Achievements this week
+        week_achievements = Achievement.query.filter(
+            Achievement.family_id == family.id,
+            Achievement.user_id == child.id,
+            Achievement.date_earned >= start_of_week.isoformat(),
+            Achievement.date_earned <= (end_of_week + timedelta(days=1)).isoformat()
+        ).count()
+
+        # Rewards redeemed this week
+        week_redemptions = db.session.query(RewardRedemption).join(Reward).filter(
+            Reward.family_id == family.id,
+            RewardRedemption.user_id == child.id,
+            RewardRedemption.redeemed_at >= start_of_week.isoformat(),
+            RewardRedemption.redeemed_at <= (end_of_week + timedelta(days=1)).isoformat()
+        ).count()
+
+        # Streak
+        streak = _calculate_streak(child.id, family.id)
+
+        # Total points
+        total_points = _user_points(child.id, family.id)
+
+        summaries.append({
+            'child': child,
+            'week_points': week_points,
+            'total_points': total_points,
+            'chores_done': chores_done,
+            'behaviour_avg': beh_avg,
+            'behaviour_entries': len(week_behaviour),
+            'achievements': week_achievements,
+            'redemptions': week_redemptions,
+            'streak': streak
+        })
+
+    return render_template('rewards/weekly_summary.html',
+                           title='Weekly Summary',
+                           summaries=summaries,
+                           start_of_week=start_of_week,
+                           end_of_week=end_of_week,
+                           week_offset=week_offset,
+                           is_parent=True)

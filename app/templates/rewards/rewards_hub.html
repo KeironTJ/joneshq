@@ -24,6 +24,10 @@
         <i class="fas fa-broom"></i>
         <span>Chores</span>
     </a>
+    <a href="{{ url_for('rewards.upcoming_chores') }}" class="rewards-nav-card rewards-nav-upcoming">
+        <i class="fas fa-calendar-alt"></i>
+        <span>Upcoming</span>
+    </a>
     {% if is_parent and awaiting_approval %}
     <a href="{{ url_for('rewards.chores', tab='approval') }}" class="rewards-nav-card rewards-nav-approval">
         <i class="fas fa-clipboard-check"></i>
@@ -48,6 +52,16 @@
         <i class="fas fa-chart-line"></i>
         <span>Behaviour</span>
     </a>
+    <a href="{{ url_for('rewards.points_history') }}" class="rewards-nav-card rewards-nav-history">
+        <i class="fas fa-history"></i>
+        <span>Points Log</span>
+    </a>
+    {% if is_parent %}
+    <a href="{{ url_for('rewards.weekly_summary') }}" class="rewards-nav-card rewards-nav-summary">
+        <i class="fas fa-calendar-week"></i>
+        <span>Summary</span>
+    </a>
+    {% endif %}
 </div>
 
 <!-- Outstanding Approvals (parents only) -->
@@ -105,6 +119,49 @@
             </div>
         </div>
         {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Child Overview Cards (parents only) -->
+{% if is_parent and child_summaries %}
+<div class="dashboard-widget mt-3">
+    <div class="widget-header widget-header-rewards">
+        <h3><i class="fas fa-users me-2"></i>Children Overview</h3>
+        <a href="{{ url_for('rewards.weekly_summary') }}" class="widget-link">Weekly Report <i class="fas fa-arrow-right"></i></a>
+    </div>
+    <div class="widget-body p-0">
+        <div class="child-overview-grid">
+            {% for cs in child_summaries %}
+            <a href="{{ url_for('rewards.child_dashboard', user_id=cs.child.id) }}" class="child-overview-card">
+                <div class="child-overview-top">
+                    <div class="child-overview-avatar"><i class="fas fa-user-circle"></i></div>
+                    <div class="child-overview-name">{{ cs.child.username }}</div>
+                    {% if cs.streak > 0 %}
+                    <div class="child-overview-streak" title="{{ cs.streak }} day streak"><i class="fas fa-fire"></i> {{ cs.streak }}</div>
+                    {% endif %}
+                </div>
+                <div class="child-overview-stats">
+                    <div class="child-overview-stat">
+                        <span class="child-overview-stat-val">{{ cs.total_points }}</span>
+                        <span class="child-overview-stat-lbl">Points</span>
+                    </div>
+                    <div class="child-overview-stat">
+                        <span class="child-overview-stat-val {% if cs.week_points > 0 %}text-success{% endif %}">{{ '+' if cs.week_points > 0 else '' }}{{ cs.week_points }}</span>
+                        <span class="child-overview-stat-lbl">This week</span>
+                    </div>
+                    <div class="child-overview-stat">
+                        <span class="child-overview-stat-val">{{ cs.pending_chores }}</span>
+                        <span class="child-overview-stat-lbl">Pending</span>
+                    </div>
+                    <div class="child-overview-stat">
+                        <span class="child-overview-stat-val {% if cs.behaviour_avg and cs.behaviour_avg >= 4 %}text-success{% elif cs.behaviour_avg and cs.behaviour_avg < 3 %}text-danger{% endif %}">{% if cs.behaviour_avg %}{{ cs.behaviour_avg }}{% else %}—{% endif %}</span>
+                        <span class="child-overview-stat-lbl">Behaviour</span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
     </div>
 </div>
 {% endif %}

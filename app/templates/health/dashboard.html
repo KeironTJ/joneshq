@@ -7,30 +7,69 @@
             <h1><i class="fas fa-heartbeat me-2"></i>Health Tracker</h1>
             <p>Track your healthy lifestyle progress.</p>
         </div>
-        <button class="week-nav-btn" data-bs-toggle="modal" data-bs-target="#addHealthModal" title="Log entry">
-            <i class="fas fa-plus"></i>
-        </button>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('health.health_settings') }}" class="week-nav-btn" title="Manage categories & goals">
+                <i class="fas fa-cog"></i>
+            </a>
+            <button class="week-nav-btn" data-bs-toggle="modal" data-bs-target="#addHealthModal" title="Log entry">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
     </div>
 </div>
 
-<!-- Summary Cards -->
+<!-- Today's Goals Summary -->
+{% set goals_cats = [] %}
+{% for cat in categories %}
+    {% if summaries.get(cat.key) and summaries[cat.key].daily_goal %}
+        {% if goals_cats.append(cat) %}{% endif %}
+    {% endif %}
+{% endfor %}
+{% if goals_cats %}
+<div class="health-goals-bar">
+    <div class="health-goals-label"><i class="fas fa-bullseye me-1"></i> Today's Goals</div>
+    <div class="health-goals-items">
+        {% for cat in goals_cats %}
+        {% set s = summaries[cat.key] %}
+        <div class="health-goal-chip" style="--goal-color: {{ cat.color }}">
+            <div class="goal-progress-ring" style="--pct: {{ s.goal_pct or 0 }}; --ring-color: {{ cat.color }}">
+                <i class="fas {{ cat.icon }}"></i>
+            </div>
+            <div class="goal-chip-text">
+                <span class="goal-chip-val">{{ s.today_value|round(1) }}/{{ s.daily_goal|round(1) }}</span>
+                <span class="goal-chip-unit">{{ cat.unit }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Summary Cards (with goal progress) -->
 <div class="health-summary-grid">
-    {% for cat, label in [('weight', 'Weight'), ('exercise', 'Exercise'), ('water', 'Water'), ('sleep', 'Sleep'), ('mood', 'Mood')] %}
-    <div class="health-summary-card" {% if summaries.get(cat) %}style="border-left: 3px solid {{ summaries[cat].color }}"{% endif %}>
-        <div class="health-summary-icon" {% if summaries.get(cat) %}style="color: {{ summaries[cat].color }}"{% endif %}>
-            <i class="fas {{ icon_map[cat] }}"></i>
+    {% for cat in categories %}
+    {% set s = summaries.get(cat.key) %}
+    <div class="health-summary-card" {% if s %}style="border-left: 3px solid {{ s.color }}"{% endif %}>
+        <div class="health-summary-icon" {% if s %}style="color: {{ s.color }}"{% else %}style="color: {{ cat.color }}"{% endif %}>
+            <i class="fas {{ cat.icon }}"></i>
         </div>
         <div class="health-summary-info">
-            <small class="text-muted">{{ label }}</small>
-            {% if summaries.get(cat) %}
-                <strong>{{ summaries[cat].value }} {{ summaries[cat].unit }}</strong>
+            <small class="text-muted">{{ cat.label }}</small>
+            {% if s %}
+                <strong>{{ s.value|round(1) }} {{ s.unit }}</strong>
                 <small>
-                    {% if summaries[cat].trend == 'up' %}<i class="fas fa-arrow-up text-danger"></i>
-                    {% elif summaries[cat].trend == 'down' %}<i class="fas fa-arrow-down text-success"></i>
-                    {% elif summaries[cat].trend == 'flat' %}<i class="fas fa-minus text-muted"></i>
+                    {% if s.trend == 'up' %}<i class="fas fa-arrow-up text-danger"></i>
+                    {% elif s.trend == 'down' %}<i class="fas fa-arrow-down text-success"></i>
+                    {% elif s.trend == 'flat' %}<i class="fas fa-minus text-muted"></i>
                     {% endif %}
-                    {{ summaries[cat].date }}
+                    {{ s.date }}
+                    {% if s.aggregation == 'sum' %}<span class="badge bg-light text-muted ms-1" style="font-size:0.6rem;">totalled</span>{% endif %}
                 </small>
+                {% if s.daily_goal and s.goal_pct is not none %}
+                <div class="health-goal-bar-wrap">
+                    <div class="health-goal-bar" style="width: {{ s.goal_pct }}%; background: {{ s.color }}"></div>
+                </div>
+                {% endif %}
             {% else %}
                 <strong class="text-muted">—</strong>
                 <small class="text-muted">No data</small>
@@ -40,26 +79,34 @@
     {% endfor %}
 </div>
 
-<!-- Chart area (simple visual bars) -->
+<!-- Chart area (daily totals) -->
 {% if chart_data %}
 <div class="health-chart-area">
-    {% for cat, entries in chart_data.items() %}
+    {% for cat in categories %}
+    {% set entries = chart_data.get(cat.key) %}
+    {% if entries %}
     <div class="health-chart-section">
         <h4>
-            <i class="fas {{ icon_map[cat] }}" style="color: {{ color_map[cat] }}"></i>
-            {{ cat|capitalize }}
-            <small class="text-muted">(last {{ entries|length }} entries)</small>
+            <i class="fas {{ cat.icon }}" style="color: {{ cat.color }}"></i>
+            {{ cat.label }}
+            <small class="text-muted">({{ entries|length }} days{% if cat.aggregation == 'sum' %}, daily totals{% endif %})</small>
         </h4>
         <div class="health-bar-chart">
             {% set max_val = entries|map(attribute='value')|max %}
             {% for entry in entries %}
-            <div class="health-bar-col" title="{{ entry.date }}: {{ entry.value }} {{ unit_map[cat] }}">
-                <div class="health-bar" style="height: {{ (entry.value / max_val * 100) if max_val else 0 }}%; background: {{ color_map[cat] }}"></div>
+            <div class="health-bar-col" title="{{ entry.date }}: {{ entry.value|round(1) }} {{ cat.unit }}">
+                <div class="health-bar" style="height: {{ (entry.value / max_val * 100) if max_val else 0 }}%; background: {{ cat.color }}"></div>
                 <small>{{ entry.date[:2] }}</small>
             </div>
             {% endfor %}
         </div>
+        {% if cat.daily_goal %}
+        <div class="chart-goal-label" style="color: {{ cat.color }}">
+            <i class="fas fa-bullseye me-1"></i>Goal: {{ cat.daily_goal|round(1) }} {{ cat.unit }}/day
+        </div>
+        {% endif %}
     </div>
+    {% endif %}
     {% endfor %}
 </div>
 {% endif %}
@@ -68,31 +115,40 @@
 <div class="view-toggle-bar mb-3">
     <div class="view-toggle">
         <a href="{{ url_for('health.health_dashboard') }}" class="view-toggle-btn {% if cat_filter == 'all' %}active{% endif %}">All</a>
-        <a href="{{ url_for('health.health_dashboard', cat='weight') }}" class="view-toggle-btn {% if cat_filter == 'weight' %}active{% endif %}">Weight</a>
-        <a href="{{ url_for('health.health_dashboard', cat='exercise') }}" class="view-toggle-btn {% if cat_filter == 'exercise' %}active{% endif %}">Exercise</a>
-        <a href="{{ url_for('health.health_dashboard', cat='water') }}" class="view-toggle-btn {% if cat_filter == 'water' %}active{% endif %}">Water</a>
-        <a href="{{ url_for('health.health_dashboard', cat='sleep') }}" class="view-toggle-btn {% if cat_filter == 'sleep' %}active{% endif %}">Sleep</a>
-        <a href="{{ url_for('health.health_dashboard', cat='mood') }}" class="view-toggle-btn {% if cat_filter == 'mood' %}active{% endif %}">Mood</a>
+        {% for cat in categories %}
+        <a href="{{ url_for('health.health_dashboard', cat=cat.key) }}" class="view-toggle-btn {% if cat_filter == cat.key %}active{% endif %}" style="{% if cat_filter == cat.key %}border-color: {{ cat.color }}; color: {{ cat.color }}{% endif %}">
+            <i class="fas {{ cat.icon }} me-1" style="font-size:0.75rem;"></i>{{ cat.label }}
+        </a>
+        {% endfor %}
     </div>
 </div>
 
-<!-- Log entries -->
+<!-- Log entries (raw, not totalled) -->
 <div class="week-planner">
     {% if logs %}
+        {% set current_date = namespace(value='') %}
         {% for log in logs %}
-        <div class="health-log-row">
-            <div class="health-log-icon" style="color: {{ color_map.get(log.category, '#666') }}">
-                <i class="fas {{ icon_map.get(log.category, 'fa-circle') }}"></i>
+            {% set log_date = log.date.strftime('%A, %d %B %Y') %}
+            {% if log_date != current_date.value %}
+                {% set current_date.value = log_date %}
+                <div class="health-date-header">
+                    <i class="fas fa-calendar-day me-1"></i> {{ log_date }}
+                    {% if log.date == today %}<span class="badge bg-primary ms-1">Today</span>{% endif %}
+                </div>
+            {% endif %}
+            {% set lcat = cat_map.get(log.category) %}
+            <div class="health-log-row">
+                <div class="health-log-icon" style="color: {{ lcat.color if lcat else '#666' }}">
+                    <i class="fas {{ lcat.icon if lcat else 'fa-circle' }}"></i>
+                </div>
+                <div class="health-log-info">
+                    <strong>{{ log.value|round(1) }} {{ log.unit }}</strong>
+                    <small>{{ lcat.label if lcat else log.category|capitalize }}{% if log.notes %} · {{ log.notes[:80] }}{% endif %}</small>
+                </div>
+                <form method="post" action="{{ url_for('health.delete_log', id=log.id) }}" class="d-inline">
+                    <button type="submit" class="chore-delete" title="Delete"><i class="fas fa-times"></i></button>
+                </form>
             </div>
-            <div class="health-log-info">
-                <strong>{{ log.value }} {{ log.unit }}</strong>
-                <small>{{ log.category|capitalize }} · {{ log.date.strftime('%A, %d %b %Y') }}</small>
-                {% if log.notes %}<p class="health-log-notes">{{ log.notes }}</p>{% endif %}
-            </div>
-            <form method="post" action="{{ url_for('health.delete_log', id=log.id) }}" class="d-inline">
-                <button type="submit" class="chore-delete" title="Delete"><i class="fas fa-times"></i></button>
-            </form>
-        </div>
         {% endfor %}
     {% else %}
         <div class="widget-empty py-5">
@@ -131,7 +187,9 @@
                     <div class="mb-3">
                         <label class="form-label">Value *</label>
                         {{ form.value(class="form-control", placeholder="e.g. 75.5") }}
-                        <small class="form-text text-muted">Weight(lbs), Exercise(min), Water(L), Sleep(hrs), Mood(1-5)</small>
+                        <small class="form-text text-muted">
+                            Multiple entries on the same day will be totalled automatically for summable categories.
+                        </small>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Notes</label>

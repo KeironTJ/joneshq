@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="week-planner-header">
+    <div class="week-nav">
+        <a href="{{ url_for('rewards.rewards_hub') }}" class="week-nav-btn" title="Back to Hub">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div class="week-nav-title">
+            <h1><i class="fas fa-user-circle me-2"></i>{{ child.username }}'s Dashboard</h1>
+            <p>Full activity overview and progress tracking.</p>
+        </div>
+        <a href="{{ url_for('rewards.weekly_summary') }}" class="week-nav-btn" title="Weekly Summary">
+            <i class="fas fa-calendar-week"></i>
+        </a>
+    </div>
+
+    <!-- Child tabs -->
+    {% if children|length > 1 %}
+    <div class="view-toggle-bar">
+        <div class="view-toggle">
+            {% for c in children %}
+            <a href="{{ url_for('rewards.child_dashboard', user_id=c.id) }}"
+               class="view-toggle-btn {% if c.id == child.id %}active{% endif %}">
+                <i class="fas fa-user me-1"></i> {{ c.username }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Stats Overview -->
+<div class="child-stats-grid">
+    <div class="child-stat-card stat-points">
+        <div class="child-stat-icon"><i class="fas fa-coins"></i></div>
+        <div class="child-stat-info">
+            <div class="child-stat-value">{{ total_points }}</div>
+            <div class="child-stat-label">Total Points</div>
+        </div>
+    </div>
+    <div class="child-stat-card stat-streak">
+        <div class="child-stat-icon"><i class="fas fa-fire"></i></div>
+        <div class="child-stat-info">
+            <div class="child-stat-value">{{ streak }}</div>
+            <div class="child-stat-label">Day Streak</div>
+        </div>
+    </div>
+    <div class="child-stat-card stat-chores">
+        <div class="child-stat-icon"><i class="fas fa-check-circle"></i></div>
+        <div class="child-stat-info">
+            <div class="child-stat-value">{{ chores_completed }}</div>
+            <div class="child-stat-label">Chores Done</div>
+        </div>
+    </div>
+    <div class="child-stat-card stat-behaviour">
+        <div class="child-stat-icon"><i class="fas fa-chart-line"></i></div>
+        <div class="child-stat-info">
+            <div class="child-stat-value">{% if behaviour_avg %}{{ behaviour_avg }}/5{% else %}—{% endif %}</div>
+            <div class="child-stat-label">Behaviour (30d)</div>
+        </div>
+    </div>
+    <div class="child-stat-card stat-pending">
+        <div class="child-stat-icon"><i class="fas fa-clock"></i></div>
+        <div class="child-stat-info">
+            <div class="child-stat-value">{{ chores_pending }}</div>
+            <div class="child-stat-label">Pending Chores</div>
+        </div>
+    </div>
+    <div class="child-stat-card stat-awaiting">
+        <div class="child-stat-icon"><i class="fas fa-hourglass-half"></i></div>
+        <div class="child-stat-info">
+            <div class="child-stat-value">{{ chores_awaiting }}</div>
+            <div class="child-stat-label">Awaiting Approval</div>
+        </div>
+    </div>
+</div>
+
+<!-- Points Breakdown -->
+<div class="row g-3 mt-1">
+    <div class="col-md-6">
+        <div class="dashboard-widget">
+            <div class="widget-header widget-header-rewards">
+                <h3><i class="fas fa-chart-pie me-2"></i>Points Breakdown</h3>
+            </div>
+            <div class="widget-body">
+                <div class="points-breakdown-list">
+                    {% set source_icons = {'chore': 'fa-broom', 'achievement': 'fa-medal', 'behaviour': 'fa-chart-line', 'redemption': 'fa-gift', 'refund': 'fa-undo', 'bonus': 'fa-plus-circle'} %}
+                    {% set source_colors = {'chore': 'bg-chore', 'achievement': 'bg-achievement', 'behaviour': 'bg-behaviour', 'redemption': 'bg-reward', 'refund': 'bg-refund', 'bonus': 'bg-chore'} %}
+                    {% for source, pts in points_breakdown.items() %}
+                    <div class="breakdown-row">
+                        <div class="breakdown-left">
+                            <div class="widget-item-icon {{ source_colors.get(source, 'bg-chore') }}">
+                                <i class="fas {{ source_icons.get(source, 'fa-coins') }}"></i>
+                            </div>
+                            <span class="breakdown-label">{{ source|capitalize }}</span>
+                        </div>
+                        <span class="{% if pts >= 0 %}points-badge{% else %}points-badge points-badge-spent{% endif %}">
+                            {{ pts }} pts
+                        </span>
+                    </div>
+                    {% endfor %}
+                    {% if not points_breakdown %}
+                    <div class="widget-empty"><i class="fas fa-coins"></i><p>No points earned yet.</p></div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weekly Points Trend -->
+    <div class="col-md-6">
+        <div class="dashboard-widget">
+            <div class="widget-header widget-header-rewards">
+                <h3><i class="fas fa-chart-bar me-2"></i>Weekly Points Trend</h3>
+            </div>
+            <div class="widget-body">
+                {% if weekly_points %}
+                <div class="weekly-trend-chart">
+                    {% set max_pts = weekly_points|map(attribute=1)|map('abs')|max %}
+                    {% for week_label, pts in weekly_points %}
+                    <div class="trend-bar-col">
+                        <div class="trend-bar" style="height: {{ (pts|abs / (max_pts if max_pts > 0 else 1) * 100)|int }}%;"
+                             title="Week {{ week_label }}: {{ pts }} pts">
+                        </div>
+                        <span class="trend-label">{{ pts }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="widget-empty"><i class="fas fa-chart-bar"></i><p>No data yet.</p></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity & Achievements -->
+<div class="row g-3 mt-1">
+    <!-- Recent Chores -->
+    <div class="col-md-6">
+        <div class="dashboard-widget">
+            <div class="widget-header widget-header-chores">
+                <h3><i class="fas fa-broom me-2"></i>Recent Chores</h3>
+            </div>
+            <div class="widget-body">
+                {% if recent_chores %}
+                    {% for chore in recent_chores %}
+                    <div class="widget-item" style="cursor:default;">
+                        <div class="widget-item-icon bg-chore"><i class="fas fa-check-circle"></i></div>
+                        <div class="widget-item-info">
+                            <strong>{{ chore.title }}</strong>
+                            <small>
+                                {% if chore.completed_at %}{{ chore.completed_at.strftime('%d %b %Y') }}{% endif %}
+                                {% if chore.recurring != 'none' %} · <i class="fas fa-sync-alt"></i> {{ chore.recurring|capitalize }}{% endif %}
+                            </small>
+                        </div>
+                        {% if chore.points %}<span class="points-badge">+{{ chore.points }}</span>{% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="widget-empty"><i class="fas fa-broom"></i><p>No completed chores yet.</p></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Achievements -->
+    <div class="col-md-6">
+        <div class="dashboard-widget">
+            <div class="widget-header widget-header-achievements">
+                <h3><i class="fas fa-medal me-2"></i>Achievements</h3>
+            </div>
+            <div class="widget-body">
+                {% if achievements %}
+                    {% for ach in achievements %}
+                    <div class="widget-item" style="cursor:default;">
+                        <div class="widget-item-icon bg-achievement"><i class="fas {{ ach.icon }}"></i></div>
+                        <div class="widget-item-info">
+                            <strong>{{ ach.title }}</strong>
+                            <small>{{ ach.date_earned.strftime('%d %b %Y') }}{% if ach.description %} · {{ ach.description }}{% endif %}</small>
+                        </div>
+                        {% if ach.points %}<span class="points-badge">+{{ ach.points }}</span>{% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="widget-empty"><i class="fas fa-trophy"></i><p>No achievements yet.</p></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Behaviour & Redemptions -->
+<div class="row g-3 mt-1">
+    <!-- Behaviour History (30 days) -->
+    <div class="col-md-6">
+        <div class="dashboard-widget">
+            <div class="widget-header" style="border-left: 3px solid var(--behaviour-color);">
+                <h3 style="color: var(--behaviour-color);"><i class="fas fa-chart-line me-2"></i>Behaviour (Last 30 Days)</h3>
+            </div>
+            <div class="widget-body">
+                {% if behaviour_entries %}
+                <div class="behaviour-history-mini">
+                    {% for entry in behaviour_entries[:14] %}
+                    <div class="beh-history-row">
+                        <span class="beh-history-date">{{ entry.date.strftime('%a %d %b') }}</span>
+                        <span class="beh-history-stars">
+                            {% for i in range(1, 6) %}
+                                <i class="fas fa-star {% if i <= entry.rating %}star-filled{% else %}star-empty{% endif %}" style="font-size:0.7rem;"></i>
+                            {% endfor %}
+                        </span>
+                        {% if entry.notes %}
+                        <span class="beh-history-note" title="{{ entry.notes }}"><i class="fas fa-comment-dots"></i></span>
+                        {% endif %}
+                        <span class="points-badge" style="font-size:0.7rem;">+{{ entry.points }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                    <div class="widget-empty"><i class="fas fa-chart-line"></i><p>No behaviour entries yet.</p></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Redemptions -->
+    <div class="col-md-6">
+        <div class="dashboard-widget">
+            <div class="widget-header widget-header-shop">
+                <h3><i class="fas fa-gift me-2"></i>Reward Redemptions</h3>
+            </div>
+            <div class="widget-body">
+                {% if redemptions %}
+                    {% for r in redemptions %}
+                    <div class="widget-item" style="cursor:default;">
+                        <div class="widget-item-icon bg-reward"><i class="fas {{ r.reward.icon }}"></i></div>
+                        <div class="widget-item-info">
+                            <strong>{{ r.reward.title }}</strong>
+                            <small>
+                                {{ r.redeemed_at.strftime('%d %b %Y') }}
+                                · <span class="badge {% if r.status == 'approved' %}bg-success{% elif r.status == 'pending' %}bg-warning text-dark{% else %}bg-secondary{% endif %}" style="font-size:0.65rem;">{{ r.status|capitalize }}</span>
+                            </small>
+                        </div>
+                        <span class="points-badge points-badge-spent">-{{ r.points_spent }}</span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="widget-empty"><i class="fas fa-gift"></i><p>No rewards redeemed yet.</p></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Points Activity -->
+<div class="row g-3 mt-1">
+    <div class="col-12">
+        <div class="dashboard-widget">
+            <div class="widget-header widget-header-rewards">
+                <h3><i class="fas fa-history me-2"></i>Recent Points Activity</h3>
+                <a href="{{ url_for('rewards.points_history', member=child.id) }}" class="widget-link">
+                    Full history <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="widget-body p-0">
+                {% if recent_points %}
+                    {% for entry in recent_points %}
+                    <div class="points-activity-row">
+                        <div class="points-activity-left">
+                            {% set source_icons = {'chore': 'fa-broom', 'achievement': 'fa-medal', 'behaviour': 'fa-chart-line', 'redemption': 'fa-gift', 'refund': 'fa-undo', 'bonus': 'fa-plus-circle'} %}
+                            <div class="widget-item-icon {{ 'bg-chore' if entry.source_type == 'chore' else 'bg-achievement' if entry.source_type == 'achievement' else 'bg-reward' if entry.source_type in ('redemption', 'refund') else 'bg-behaviour' }}">
+                                <i class="fas {{ source_icons.get(entry.source_type, 'fa-coins') }}"></i>
+                            </div>
+                            <div class="points-activity-info">
+                                <strong>{{ entry.description or entry.source_type|capitalize }}</strong>
+                                <small>{{ entry.created_at.strftime('%d %b %Y, %H:%M') }}</small>
+                            </div>
+                        </div>
+                        <span class="{% if entry.points >= 0 %}points-badge{% else %}points-badge points-badge-spent{% endif %}">
+                            {{ '+' if entry.points > 0 else '' }}{{ entry.points }} pts
+                        </span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="widget-empty py-4"><i class="fas fa-history"></i><p>No activity yet.</p></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

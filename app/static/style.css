@@ -1824,6 +1824,106 @@ a:hover { color: var(--primary-dark); }
 .health-log-info small { color: var(--text-muted); font-size: 0.78rem; }
 .health-log-notes { font-size: 0.82rem; color: var(--text-muted); margin: 0.2rem 0 0; }
 
+/* Health date header */
+.health-date-header {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    padding: 0.5rem 1rem;
+    background: var(--bg-main);
+    border-bottom: 1px solid var(--border-light);
+}
+
+/* Goal progress bar inside summary cards */
+.health-goal-bar-wrap {
+    width: 100%;
+    height: 4px;
+    background: var(--border-light);
+    border-radius: 2px;
+    margin-top: 0.3rem;
+    overflow: hidden;
+}
+.health-goal-bar {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.4s ease;
+    max-width: 100%;
+}
+
+/* Today's Goals bar */
+.health-goals-bar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-light);
+    overflow-x: auto;
+}
+.health-goals-label {
+    font-weight: 600;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+.health-goals-items {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: nowrap;
+}
+.health-goal-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: var(--radius-md);
+    background: rgba(0,0,0,0.03);
+    white-space: nowrap;
+}
+.goal-progress-ring {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    color: var(--ring-color, var(--health-color));
+    background: conic-gradient(
+        var(--ring-color, var(--health-color)) calc(var(--pct, 0) * 1%),
+        var(--border-light) 0
+    );
+    position: relative;
+}
+.goal-progress-ring::before {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border-radius: 50%;
+    background: var(--card-bg);
+}
+.goal-progress-ring i {
+    position: relative;
+    z-index: 1;
+}
+.goal-chip-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+}
+.goal-chip-val { font-size: 0.78rem; font-weight: 600; }
+.goal-chip-unit { font-size: 0.65rem; color: var(--text-muted); }
+
+/* Chart goal label */
+.chart-goal-label {
+    font-size: 0.78rem;
+    font-weight: 500;
+    margin-top: 0.3rem;
+    text-align: right;
+}
+
 /* === Dashboard Rewards/Health Widgets === */
 .dash-points-row {
     display: flex;
@@ -1946,4 +2046,401 @@ a:hover { color: var(--primary-dark); }
 @media (max-width: 480px) {
     .quick-action span { display: none; }
     .quick-action { padding: 0.5rem 0.75rem; }
+}
+
+/* ===================================================
+   Enhanced Rewards System — Parent Dashboard & Tools
+   =================================================== */
+
+/* --- Child Stats Grid (Child Dashboard) --- */
+.child-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.65rem;
+    margin: 1rem 0;
+}
+.child-stat-card {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    padding: 0.75rem;
+    transition: box-shadow 0.15s;
+}
+.child-stat-card:hover { box-shadow: var(--shadow-sm); }
+.child-stat-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+.stat-points .child-stat-icon { background: var(--rewards-bg); color: var(--rewards-color); }
+.stat-streak .child-stat-icon { background: #FFF3E0; color: #E65100; }
+.stat-chores .child-stat-icon { background: #E8F5E9; color: #2E7D32; }
+.stat-behaviour .child-stat-icon { background: #F2ECF9; color: var(--behaviour-color); }
+.stat-pending .child-stat-icon { background: #EBF1FD; color: var(--chore-color); }
+.stat-awaiting .child-stat-icon { background: #FFF8E1; color: #F9A825; }
+.child-stat-info { min-width: 0; }
+.child-stat-value {
+    font-size: 1.2rem;
+    font-weight: 800;
+    font-family: var(--font-heading);
+    line-height: 1.1;
+}
+.child-stat-label {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+/* --- Points Breakdown --- */
+.points-breakdown-list { display: flex; flex-direction: column; gap: 0.25rem; }
+.breakdown-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border-light);
+}
+.breakdown-row:last-child { border-bottom: none; }
+.breakdown-left { display: flex; align-items: center; gap: 0.5rem; }
+.breakdown-label { font-weight: 600; font-size: 0.88rem; }
+.bg-behaviour { background: #F2ECF9; color: var(--behaviour-color); }
+.bg-refund { background: #FFF3E0; color: #E65100; }
+
+/* --- Weekly Trend Chart --- */
+.weekly-trend-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 120px;
+    padding: 0.5rem 0;
+}
+.trend-bar-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    height: 100%;
+    justify-content: flex-end;
+}
+.trend-bar {
+    width: 100%;
+    min-height: 4px;
+    background: linear-gradient(180deg, var(--rewards-color), #9B6DD7);
+    border-radius: 4px 4px 0 0;
+    transition: height 0.3s;
+}
+.trend-label {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    margin-top: 0.2rem;
+    font-weight: 600;
+}
+
+/* --- Behaviour History Mini (child dashboard) --- */
+.behaviour-history-mini { display: flex; flex-direction: column; gap: 0.15rem; }
+.beh-history-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 0.82rem;
+}
+.beh-history-row:last-child { border-bottom: none; }
+.beh-history-date { width: 90px; color: var(--text-muted); font-size: 0.75rem; flex-shrink: 0; }
+.beh-history-stars { display: flex; gap: 1px; flex-shrink: 0; }
+.beh-history-note { color: var(--primary); font-size: 0.7rem; }
+
+/* --- Points Activity Row (shared) --- */
+.points-activity-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid var(--border-light);
+    transition: background 0.15s;
+}
+.points-activity-row:last-child { border-bottom: none; }
+.points-activity-row:hover { background: var(--bg-body); }
+.points-activity-left {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    flex: 1;
+    min-width: 0;
+}
+.points-activity-info { flex: 1; min-width: 0; }
+.points-activity-info strong { display: block; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.points-activity-info small { color: var(--text-muted); font-size: 0.75rem; }
+
+/* --- Points History Page --- */
+.filter-bar {
+    padding: 0.5rem 1rem;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border-light);
+}
+.filter-form {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    align-items: flex-end;
+}
+.filter-group { display: flex; flex-direction: column; gap: 0.15rem; }
+.filter-label { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+.filter-form .form-select-sm { min-width: 130px; font-size: 0.82rem; }
+
+.points-summary-bar {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    margin: 1rem 0;
+    flex-wrap: wrap;
+}
+.points-summary-card {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+.points-summary-earned { background: #E8F5E9; color: #2E7D32; }
+.points-summary-spent { background: #FFEBEE; color: #C62828; }
+.points-summary-net { background: #EBF1FD; color: var(--chore-color); }
+
+.points-date-header {
+    padding: 0.45rem 1rem;
+    background: #f8f6f2;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-bottom: 1px solid var(--border-light);
+}
+
+/* --- Upcoming Chores --- */
+.upcoming-legend {
+    display: flex;
+    justify-content: center;
+    gap: 1.25rem;
+    margin: 0.75rem 0;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+.legend-item { display: flex; align-items: center; gap: 0.35rem; }
+.legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.legend-dot-existing { background: var(--chore-color); }
+.legend-dot-projected { background: #D5D0C8; border: 2px dashed var(--text-muted); }
+
+.upcoming-date-section { margin-bottom: 0; }
+.upcoming-date-header {
+    padding: 0.5rem 1rem;
+    background: #f8f6f2;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    border-bottom: 1px solid var(--border-light);
+}
+.upcoming-today { background: rgba(58, 143, 133, 0.1); }
+
+.chore-projected {
+    opacity: 0.65;
+    border-left: 3px dashed #D5D0C8;
+    background: repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 10px,
+        rgba(0,0,0,0.01) 10px,
+        rgba(0,0,0,0.01) 20px
+    );
+}
+.chore-projected-icon {
+    font-size: 1.1rem;
+    color: #D5D0C8;
+    flex-shrink: 0;
+    width: 24px;
+    text-align: center;
+}
+.chore-existing-icon {
+    font-size: 0.6rem;
+    color: var(--chore-color);
+    flex-shrink: 0;
+    width: 24px;
+    text-align: center;
+}
+
+.upcoming-summary-bar {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin: 1rem 0;
+    padding: 0.65rem 1rem;
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-light);
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    flex-wrap: wrap;
+}
+.upcoming-summary-item strong { color: var(--text-dark); }
+
+/* --- Weekly Summary Cards --- */
+.summary-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+.summary-card-link { text-decoration: none; color: inherit; }
+.summary-card-link:hover { color: inherit; }
+.summary-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    transition: box-shadow 0.15s, transform 0.15s;
+}
+.summary-card-link:hover .summary-card {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+.summary-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.85rem 1rem;
+    background: linear-gradient(135deg, rgba(226, 93, 139, 0.06), rgba(155, 109, 215, 0.06));
+    border-bottom: 1px solid var(--border-light);
+}
+.summary-card-avatar {
+    font-size: 1.8rem;
+    color: var(--rewards-color);
+    flex-shrink: 0;
+}
+.summary-card-name { flex: 1; min-width: 0; }
+.summary-card-name h4 { margin: 0; font-size: 1rem; }
+.summary-card-name .total-pts { font-size: 0.75rem; color: var(--text-muted); }
+.summary-streak {
+    background: #FFF3E0;
+    color: #E65100;
+    padding: 0.25rem 0.6rem;
+    border-radius: 50px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.summary-card-body { padding: 0.85rem 1rem; }
+.summary-stat-row {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: space-around;
+    margin-bottom: 0.65rem;
+}
+.summary-stat { text-align: center; }
+.summary-stat-value { font-size: 1.1rem; font-weight: 800; font-family: var(--font-heading); }
+.summary-stat-label { font-size: 0.68rem; color: var(--text-muted); }
+.summary-extras {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+.summary-chip {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 50px;
+}
+.summary-chip-achievement { background: #FDF3E3; color: var(--achievement-color); }
+.summary-chip-redemption { background: var(--rewards-bg); color: var(--rewards-color); }
+
+/* --- Child Overview on Hub --- */
+.child-overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 0;
+}
+.child-overview-card {
+    display: flex;
+    flex-direction: column;
+    padding: 0.85rem 1rem;
+    text-decoration: none;
+    color: inherit;
+    border-bottom: 1px solid var(--border-light);
+    border-right: 1px solid var(--border-light);
+    transition: background 0.15s;
+}
+.child-overview-card:hover { background: var(--bg-body); color: inherit; }
+.child-overview-top {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+.child-overview-avatar {
+    font-size: 1.4rem;
+    color: var(--rewards-color);
+    flex-shrink: 0;
+}
+.child-overview-name {
+    font-weight: 700;
+    font-size: 0.92rem;
+    flex: 1;
+}
+.child-overview-streak {
+    background: #FFF3E0;
+    color: #E65100;
+    padding: 0.15rem 0.45rem;
+    border-radius: 50px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.child-overview-stats {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: space-between;
+}
+.child-overview-stat { text-align: center; }
+.child-overview-stat-val { display: block; font-weight: 800; font-size: 0.95rem; font-family: var(--font-heading); }
+.child-overview-stat-lbl { display: block; font-size: 0.62rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; }
+
+/* --- Rewards Nav Extra Cards --- */
+.rewards-nav-upcoming { background: #E8F5E9; color: #2E7D32; }
+.rewards-nav-history { background: #F3E5F5; color: #7B1FA2; }
+.rewards-nav-summary { background: #E3F2FD; color: #1565C0; }
+
+/* --- Mobile adjustments --- */
+@media (max-width: 768px) {
+    .child-stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .summary-cards-grid { grid-template-columns: 1fr; }
+    .filter-form { gap: 0.5rem; }
+    .filter-form .form-select-sm { min-width: 100px; }
+    .points-summary-bar { flex-direction: column; align-items: center; gap: 0.4rem; }
+    .upcoming-summary-bar { gap: 0.75rem; }
+    .child-overview-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+    .child-stats-grid { grid-template-columns: repeat(2, 1fr); gap: 0.4rem; }
+    .child-stat-card { padding: 0.5rem; }
+    .child-stat-value { font-size: 1rem; }
+    .weekly-trend-chart { height: 80px; }
 }

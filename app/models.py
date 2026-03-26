@@ -303,13 +303,32 @@ class PointsLedger(db.Model):
 
 
 ## HEALTH TRACKING
+class HealthCategory(db.Model):
+    """User-customisable health tracking categories with goals."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    key = db.Column(db.String(30), nullable=False)  # slug e.g. 'exercise', 'driving'
+    label = db.Column(db.String(64), nullable=False)  # display name
+    unit = db.Column(db.String(20), nullable=False)  # min, L, hrs, lbs, /5, steps, etc
+    icon = db.Column(db.String(50), default='fa-circle')
+    color = db.Column(db.String(20), default='#6C757D')
+    aggregation = db.Column(db.String(10), default='sum')  # 'sum' or 'latest'
+    daily_goal = db.Column(db.Float, nullable=True)  # target per day (null = no goal)
+    sort_order = db.Column(db.Integer, default=0)
+    active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=func.now())
+
+    user = db.relationship('User', backref='health_categories')
+    __table_args__ = (db.UniqueConstraint('user_id', 'key', name='_user_category_uc'),)
+
+
 class HealthLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     date = db.Column(db.Date, nullable=False)
-    category = db.Column(db.String(30), nullable=False)  # weight, exercise, water, sleep, mood
-    value = db.Column(db.Float, nullable=False)  # e.g. kg, minutes, litres, hours, 1-5
-    unit = db.Column(db.String(20))  # kg, min, L, hrs, rating
+    category = db.Column(db.String(30), nullable=False)
+    value = db.Column(db.Float, nullable=False)
+    unit = db.Column(db.String(20))
     notes = db.Column(db.String(500))
     created_at = db.Column(db.DateTime, default=func.now())
 
