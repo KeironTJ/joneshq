@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="week-planner-header">
+    <div class="week-nav">
+        <a href="{{ url_for('rewards.chores') }}" class="week-nav-btn" title="Back to Chores">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div class="week-nav-title">
+            <h1><i class="fas fa-clock-rotate-left me-2"></i>Chore History</h1>
+            <p>Completed chores log for your family.</p>
+        </div>
+    </div>
+
+    <!-- Member filter -->
+    <div class="view-toggle-bar">
+        <div class="view-toggle">
+            <a href="{{ url_for('rewards.chore_history') }}" class="view-toggle-btn {% if not member_filter %}active{% endif %}">All</a>
+            {% for mid, mname in members %}
+            <a href="{{ url_for('rewards.chore_history', member=mid) }}" class="view-toggle-btn {% if member_filter == mid %}active{% endif %}">{{ mname }}</a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="week-planner">
+    {% if history %}
+        {% for chore in history %}
+        <div class="chore-row chore-completed">
+            <div class="chore-row-left">
+                <span class="chore-check chore-check-done"><i class="fas fa-check-circle"></i></span>
+                <div class="chore-info">
+                    <strong>{{ chore.title }}</strong>
+                    <small>
+                        {% if chore.completer %}
+                            Completed by {{ chore.completer.username }}
+                        {% elif chore.assignee %}
+                            {{ chore.assignee.username }}
+                        {% endif %}
+                        {% if chore.completed_at %} · {{ chore.completed_at.strftime('%d %b %Y, %H:%M') }}{% endif %}
+                        {% if chore.recurring != 'none' %} · <i class="fas fa-sync-alt"></i> {{ chore.recurring|capitalize }}{% endif %}
+                    </small>
+                </div>
+            </div>
+            <div class="chore-row-right">
+                {% if chore.points %}
+                <span class="points-badge">+{{ chore.points }}</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="widget-empty py-5">
+            <i class="fas fa-clock-rotate-left"></i>
+            <p>No completed chores yet.</p>
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}

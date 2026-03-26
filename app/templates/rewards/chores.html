@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="week-planner-header">
+    <div class="week-nav">
+        <a href="{{ url_for('rewards.rewards_hub') }}" class="week-nav-btn" title="Back to Hub">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div class="week-nav-title">
+            <h1><i class="fas fa-broom me-2"></i>Chores</h1>
+            <p>Assign tasks and earn points.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('rewards.chore_history') }}" class="week-nav-btn" title="Chore history">
+                <i class="fas fa-clock-rotate-left"></i>
+            </a>
+            {% if is_parent %}
+            <button class="week-nav-btn" data-bs-toggle="modal" data-bs-target="#addChoreModal" title="Add chore">
+                <i class="fas fa-plus"></i>
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Tab toggle -->
+    <div class="view-toggle-bar">
+        <div class="view-toggle">
+            <a href="{{ url_for('rewards.chores', tab='mine') }}" class="view-toggle-btn {% if tab == 'mine' %}active{% endif %}">
+                <i class="fas fa-user me-1"></i> My Chores
+            </a>
+            <a href="{{ url_for('rewards.chores', tab='open') }}" class="view-toggle-btn {% if tab == 'open' %}active{% endif %}">
+                <i class="fas fa-door-open me-1"></i> Open
+                {% if open_count %}<span class="badge bg-info ms-1">{{ open_count }}</span>{% endif %}
+            </a>
+            {% if is_parent %}
+            <a href="{{ url_for('rewards.chores', tab='approval') }}" class="view-toggle-btn {% if tab == 'approval' %}active{% endif %}">
+                <i class="fas fa-clipboard-check me-1"></i> Approval
+                {% if approval_count %}<span class="badge bg-warning text-dark ms-1">{{ approval_count }}</span>{% endif %}
+            </a>
+            {% endif %}
+            <a href="{{ url_for('rewards.chores', tab='completed') }}" class="view-toggle-btn {% if tab == 'completed' %}active{% endif %}">
+                <i class="fas fa-check me-1"></i> Done
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="week-planner">
+    {% if chores %}
+        {% for chore in chores %}
+        <div class="chore-row {% if chore.status == 'completed' %}chore-completed{% elif chore.status == 'awaiting_approval' %}chore-awaiting{% endif %}">
+            <div class="chore-row-left">
+                {% if chore.status == 'pending' and chore.assigned_to is none %}
+                <!-- Open chore: show Claim button -->
+                <form method="post" action="{{ url_for('rewards.complete_chore', id=chore.id) }}" class="d-inline">
+                    <button type="submit" class="chore-claim" title="Claim this chore">
+                        <i class="fas fa-hand"></i>
+                    </button>
+                </form>
+                {% elif chore.status == 'pending' %}
+                <form method="post" action="{{ url_for('rewards.complete_chore', id=chore.id) }}" class="d-inline">
+                    <button type="submit" class="chore-check" title="Mark complete">
+                        <i class="far fa-circle"></i>
+                    </button>
+                </form>
+                {% elif chore.status == 'awaiting_approval' %}
+                <span class="chore-check chore-check-waiting"><i class="fas fa-hourglass-half"></i></span>
+                {% else %}
+                <span class="chore-check chore-check-done"><i class="fas fa-check-circle"></i></span>
+                {% endif %}
+                <div class="chore-info">
+                    <strong>{{ chore.title }}</strong>
+                    <small>
+                        {% if chore.assignee %}
+                            <i class="fas fa-user me-1"></i>{{ chore.assignee.username }}
+                        {% else %}
+                            <i class="fas fa-users me-1"></i>Unassigned
+                        {% endif %}
+                        {% if chore.due_date %} · Due {{ chore.due_date.strftime('%d %b') }}{% endif %}
+                        {% if chore.recurring != 'none' %} · <i class="fas fa-sync-alt"></i> {{ chore.recurring|capitalize }}{% endif %}
+                        {% if chore.status == 'awaiting_approval' and chore.completer %}
+                            · <i class="fas fa-user-clock"></i> {{ chore.completer.username }} awaiting approval
+                        {% endif %}
+                        {% if chore.status == 'completed' and chore.completer %}
+                            · Completed by {{ chore.completer.username }}
+                            {% if chore.completed_at %} · {{ chore.completed_at.strftime('%d %b') }}{% endif %}
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+            <div class="chore-row-right">
+                {% if chore.points %}
+                <span class="points-badge">+{{ chore.points }}</span>
+                {% endif %}
+                {% if chore.status == 'awaiting_approval' and is_parent %}
+                <form method="post" action="{{ url_for('rewards.approve_chore', id=chore.id) }}" class="d-inline">
+                    <button type="submit" class="chore-approve" title="Approve"><i class="fas fa-check"></i></button>
+                </form>
+                <form method="post" action="{{ url_for('rewards.reject_chore', id=chore.id) }}" class="d-inline">
+                    <button type="submit" class="chore-reject" title="Reject"><i class="fas fa-undo"></i></button>
+                </form>
+                {% endif %}
+                {% if is_parent %}
+                <form method="post" action="{{ url_for('rewards.delete_chore', id=chore.id) }}" class="d-inline">
+                    <button type="submit" class="chore-delete" title="Delete"><i class="fas fa-times"></i></button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="widget-empty py-5">
+            <i class="fas fa-broom"></i>
+            {% if tab == 'completed' %}
+                <p>No completed chores yet.</p>
+            {% elif tab == 'approval' %}
+                <p>No chores awaiting approval.</p>
+            {% elif tab == 'open' %}
+                <p>No open chores right now.</p>
+            {% else %}
+                <p>No chores assigned to you. Check the <a href="{{ url_for('rewards.chores', tab='open') }}">Open</a> tab!</p>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+
+{% if is_parent %}
+<!-- FAB -->
+<button class="fab-add fab-add-rewards d-lg-none" data-bs-toggle="modal" data-bs-target="#addChoreModal" title="Add chore">
+    <i class="fas fa-plus"></i>
+</button>
+
+<!-- Add Chore Modal -->
+<div class="modal fade" id="addChoreModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header modal-header-rewards">
+                <h5 class="modal-title"><i class="fas fa-plus me-2"></i>Add Chore</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" action="{{ url_for('rewards.chores') }}">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        <label class="form-label">Title *</label>
+                        {{ form.title(class="form-control", placeholder="e.g. Wash the dishes") }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        {{ form.description(class="form-control", rows=2) }}
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Assign To</label>
+                            {{ form.assigned_to(class="form-select") }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Points</label>
+                            {{ form.points(class="form-control") }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Due Date</label>
+                            {{ form.due_date(class="form-control") }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Recurring</label>
+                            {{ form.recurring(class="form-select") }}
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-rewards"><i class="fas fa-plus me-1"></i> Add Chore</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

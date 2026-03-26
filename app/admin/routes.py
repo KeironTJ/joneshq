@@ -9,6 +9,7 @@ from app.models import (
     Family,
     FamilyMembers,
     ActivityPlan,
+    SiteBanner,
 )
 from flask import render_template, flash, redirect, url_for, request, session, jsonify
 from flask_login import login_required, current_user 
@@ -22,6 +23,7 @@ from app.admin.forms import (
     TransferFamilyOwnershipForm,
     CreateFamilyForm,
     AddUserToFamilyForm,
+    SiteBannerForm,
 )
 
 
@@ -350,3 +352,81 @@ def reassign_family_owner():
     db.session.commit()
     flash('Family owner reassigned successfully.', 'success')
     return redirect(url_for('admin.admin_families'))
+
+
+## SITE BANNERS
+@bp.route('/admin_banners', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_banners():
+    form = SiteBannerForm()
+    banners = SiteBanner.query.order_by(SiteBanner.created_at.desc()).all()
+
+    if form.validate_on_submit():
+        banner = SiteBanner(
+            title=form.title.data.strip(),
+            message=form.message.data.strip(),
+            banner_type=form.banner_type.data,
+            show_on_index=form.show_on_index.data,
+            show_on_all_pages=form.show_on_all_pages.data,
+            is_active=form.is_active.data,
+            updated_by=current_user.id,
+        )
+        db.session.add(banner)
+        db.session.commit()
+        flash('Banner created successfully!', 'success')
+        return redirect(url_for('admin.admin_banners'))
+
+    return render_template('admin/admin_banners.html',
+                           title='Manage Banners',
+                           form=form,
+                           banners=banners)
+
+
+@bp.route('/admin_banners/edit/<int:banner_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_banner(banner_id):
+    banner = SiteBanner.query.get_or_404(banner_id)
+    form = SiteBannerForm(obj=banner)
+
+    if form.validate_on_submit():
+        banner.title = form.title.data.strip()
+        banner.message = form.message.data.strip()
+        banner.banner_type = form.banner_type.data
+        banner.show_on_index = form.show_on_index.data
+        banner.show_on_all_pages = form.show_on_all_pages.data
+        banner.is_active = form.is_active.data
+        banner.updated_by = current_user.id
+        db.session.commit()
+        flash('Banner updated!', 'success')
+        return redirect(url_for('admin.admin_banners'))
+
+    return render_template('admin/admin_banners.html',
+                           title='Edit Banner',
+                           form=form,
+                           banners=SiteBanner.query.order_by(SiteBanner.created_at.desc()).all(),
+                           editing=banner)
+
+
+@bp.route('/admin_banners/toggle/<int:banner_id>', methods=['POST'])
+@login_required
+@admin_required
+def toggle_banner(banner_id):
+    banner = SiteBanner.query.get_or_404(banner_id)
+    banner.is_active = not banner.is_active
+    db.session.commit()
+    state = 'activated' if banner.is_active else 'deactivated'
+    flash(f'Banner {state}.', 'success')
+    return redirect(url_for('admin.admin_banners'))
+
+
+@bp.route('/admin_banners/delete/<int:banner_id>', methods=['POST'])
+@login_required
+@admin_required
+def delete_banner(banner_id):
+    banner = SiteBanner.query.get_or_404(banner_id)
+    db.session.delete(banner)
+    db.session.commit()
+    flash('Banner deleted.', 'success')
+    return redirect(url_for('admin.admin_banners'))

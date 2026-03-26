@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="week-planner-header">
+    <div class="week-nav">
+        <div class="week-nav-title">
+            <h1><i class="fas fa-heartbeat me-2"></i>Health Tracker</h1>
+            <p>Track your healthy lifestyle progress.</p>
+        </div>
+        <button class="week-nav-btn" data-bs-toggle="modal" data-bs-target="#addHealthModal" title="Log entry">
+            <i class="fas fa-plus"></i>
+        </button>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="health-summary-grid">
+    {% for cat, label in [('weight', 'Weight'), ('exercise', 'Exercise'), ('water', 'Water'), ('sleep', 'Sleep'), ('mood', 'Mood')] %}
+    <div class="health-summary-card" {% if summaries.get(cat) %}style="border-left: 3px solid {{ summaries[cat].color }}"{% endif %}>
+        <div class="health-summary-icon" {% if summaries.get(cat) %}style="color: {{ summaries[cat].color }}"{% endif %}>
+            <i class="fas {{ icon_map[cat] }}"></i>
+        </div>
+        <div class="health-summary-info">
+            <small class="text-muted">{{ label }}</small>
+            {% if summaries.get(cat) %}
+                <strong>{{ summaries[cat].value }} {{ summaries[cat].unit }}</strong>
+                <small>
+                    {% if summaries[cat].trend == 'up' %}<i class="fas fa-arrow-up text-danger"></i>
+                    {% elif summaries[cat].trend == 'down' %}<i class="fas fa-arrow-down text-success"></i>
+                    {% elif summaries[cat].trend == 'flat' %}<i class="fas fa-minus text-muted"></i>
+                    {% endif %}
+                    {{ summaries[cat].date }}
+                </small>
+            {% else %}
+                <strong class="text-muted">—</strong>
+                <small class="text-muted">No data</small>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Chart area (simple visual bars) -->
+{% if chart_data %}
+<div class="health-chart-area">
+    {% for cat, entries in chart_data.items() %}
+    <div class="health-chart-section">
+        <h4>
+            <i class="fas {{ icon_map[cat] }}" style="color: {{ color_map[cat] }}"></i>
+            {{ cat|capitalize }}
+            <small class="text-muted">(last {{ entries|length }} entries)</small>
+        </h4>
+        <div class="health-bar-chart">
+            {% set max_val = entries|map(attribute='value')|max %}
+            {% for entry in entries %}
+            <div class="health-bar-col" title="{{ entry.date }}: {{ entry.value }} {{ unit_map[cat] }}">
+                <div class="health-bar" style="height: {{ (entry.value / max_val * 100) if max_val else 0 }}%; background: {{ color_map[cat] }}"></div>
+                <small>{{ entry.date[:2] }}</small>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Category filter -->
+<div class="view-toggle-bar mb-3">
+    <div class="view-toggle">
+        <a href="{{ url_for('health.health_dashboard') }}" class="view-toggle-btn {% if cat_filter == 'all' %}active{% endif %}">All</a>
+        <a href="{{ url_for('health.health_dashboard', cat='weight') }}" class="view-toggle-btn {% if cat_filter == 'weight' %}active{% endif %}">Weight</a>
+        <a href="{{ url_for('health.health_dashboard', cat='exercise') }}" class="view-toggle-btn {% if cat_filter == 'exercise' %}active{% endif %}">Exercise</a>
+        <a href="{{ url_for('health.health_dashboard', cat='water') }}" class="view-toggle-btn {% if cat_filter == 'water' %}active{% endif %}">Water</a>
+        <a href="{{ url_for('health.health_dashboard', cat='sleep') }}" class="view-toggle-btn {% if cat_filter == 'sleep' %}active{% endif %}">Sleep</a>
+        <a href="{{ url_for('health.health_dashboard', cat='mood') }}" class="view-toggle-btn {% if cat_filter == 'mood' %}active{% endif %}">Mood</a>
+    </div>
+</div>
+
+<!-- Log entries -->
+<div class="week-planner">
+    {% if logs %}
+        {% for log in logs %}
+        <div class="health-log-row">
+            <div class="health-log-icon" style="color: {{ color_map.get(log.category, '#666') }}">
+                <i class="fas {{ icon_map.get(log.category, 'fa-circle') }}"></i>
+            </div>
+            <div class="health-log-info">
+                <strong>{{ log.value }} {{ log.unit }}</strong>
+                <small>{{ log.category|capitalize }} · {{ log.date.strftime('%A, %d %b %Y') }}</small>
+                {% if log.notes %}<p class="health-log-notes">{{ log.notes }}</p>{% endif %}
+            </div>
+            <form method="post" action="{{ url_for('health.delete_log', id=log.id) }}" class="d-inline">
+                <button type="submit" class="chore-delete" title="Delete"><i class="fas fa-times"></i></button>
+            </form>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="widget-empty py-5">
+            <i class="fas fa-heartbeat"></i>
+            <p>No health logs yet. Start tracking!</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- FAB -->
+<button class="fab-add fab-add-health d-lg-none" data-bs-toggle="modal" data-bs-target="#addHealthModal" title="Log entry">
+    <i class="fas fa-plus"></i>
+</button>
+
+<!-- Add Health Log Modal -->
+<div class="modal fade" id="addHealthModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header modal-header-health">
+                <h5 class="modal-title"><i class="fas fa-heartbeat me-2"></i>Log Health Entry</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" action="{{ url_for('health.health_dashboard') }}">
+                    {{ form.hidden_tag() }}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Category *</label>
+                            {{ form.category(class="form-select") }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Date *</label>
+                            {{ form.date(class="form-control") }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Value *</label>
+                        {{ form.value(class="form-control", placeholder="e.g. 75.5") }}
+                        <small class="form-text text-muted">Weight(lbs), Exercise(min), Water(L), Sleep(hrs), Mood(1-5)</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        {{ form.notes(class="form-control", rows=2, placeholder="How are you feeling?") }}
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-health"><i class="fas fa-plus me-1"></i> Log Entry</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

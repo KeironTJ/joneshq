@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="week-planner-header">
+    <div class="week-nav">
+        <a href="{{ url_for('rewards.rewards_shop') }}" class="week-nav-btn" title="Back to Shop">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div class="week-nav-title">
+            <h1><i class="fas fa-receipt me-2"></i>Redemption History</h1>
+            <p>Track all redeemed rewards.</p>
+        </div>
+    </div>
+
+    <!-- Status tabs -->
+    <div class="view-toggle-bar">
+        <div class="view-toggle">
+            <a href="{{ url_for('rewards.redemption_history', member=member_filter or None) }}" class="view-toggle-btn {% if tab == 'all' %}active{% endif %}">All</a>
+            <a href="{{ url_for('rewards.redemption_history', tab='pending', member=member_filter or None) }}" class="view-toggle-btn {% if tab == 'pending' %}active{% endif %}">
+                Pending{% if pending_count %} <span class="badge bg-danger ms-1">{{ pending_count }}</span>{% endif %}
+            </a>
+            <a href="{{ url_for('rewards.redemption_history', tab='approved', member=member_filter or None) }}" class="view-toggle-btn {% if tab == 'approved' %}active{% endif %}">Approved</a>
+            <a href="{{ url_for('rewards.redemption_history', tab='rejected', member=member_filter or None) }}" class="view-toggle-btn {% if tab == 'rejected' %}active{% endif %}">Rejected</a>
+        </div>
+    </div>
+
+    <!-- Member filter -->
+    <div class="view-toggle-bar">
+        <div class="view-toggle">
+            <a href="{{ url_for('rewards.redemption_history', tab=tab) }}" class="view-toggle-btn {% if not member_filter %}active{% endif %}">All Members</a>
+            {% for mid, mname in members %}
+            <a href="{{ url_for('rewards.redemption_history', tab=tab, member=mid) }}" class="view-toggle-btn {% if member_filter == mid %}active{% endif %}">{{ mname }}</a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="week-planner">
+    {% if redemptions %}
+        {% for r in redemptions %}
+        <div class="chore-row {% if r.status == 'pending' %}redemption-pending{% elif r.status == 'rejected' %}redemption-rejected{% endif %}">
+            <div class="chore-row-left">
+                <div class="widget-item-icon bg-reward"><i class="fas {{ r.reward.icon }}"></i></div>
+                <div class="chore-info">
+                    <strong>{{ r.reward.title }}</strong>
+                    <small>
+                        <i class="fas fa-user me-1"></i>{{ r.user.username }}
+                        · {{ r.redeemed_at.strftime('%d %b %Y, %H:%M') }}
+                    </small>
+                </div>
+            </div>
+            <div class="chore-row-right d-flex align-items-center gap-2">
+                {% if r.status == 'pending' %}
+                    <span class="badge bg-warning text-dark"><i class="fas fa-hourglass-half me-1"></i>Pending</span>
+                    {% if is_parent %}
+                    <form method="post" action="{{ url_for('rewards.approve_redemption', id=r.id) }}" class="d-inline">
+                        <button type="submit" class="chore-approve" title="Approve"><i class="fas fa-check"></i></button>
+                    </form>
+                    <form method="post" action="{{ url_for('rewards.reject_redemption', id=r.id) }}" class="d-inline">
+                        <button type="submit" class="chore-reject" title="Reject &amp; refund"><i class="fas fa-times"></i></button>
+                    </form>
+                    {% endif %}
+                {% elif r.status == 'rejected' %}
+                    <span class="badge bg-secondary"><i class="fas fa-times me-1"></i>Rejected</span>
+                {% else %}
+                    <span class="badge bg-success"><i class="fas fa-check me-1"></i>Approved</span>
+                {% endif %}
+                <span class="points-badge points-badge-spent">-{{ r.points_spent }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="widget-empty py-5">
+            <i class="fas fa-receipt"></i>
+            <p>No redemptions found.</p>
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Page Header -->
+<div class="page-header-admin">
+    <h1><i class="fa-solid fa-bullhorn me-2"></i>Manage Site Banners</h1>
+    <p class="mb-0">Create, edit, and toggle banners shown across the site.</p>
+</div>
+
+<div class="container">
+    <div class="row g-4">
+
+        <!-- Banner Form -->
+        <div class="col-lg-5">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header bg-white border-0 pt-3 pb-0">
+                    <h5 class="mb-0">
+                        {% if editing is defined and editing %}
+                            <i class="fas fa-pen me-1"></i> Edit Banner
+                        {% else %}
+                            <i class="fas fa-plus me-1"></i> New Banner
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if editing is defined and editing %}
+                    <form method="POST" action="{{ url_for('admin.edit_banner', banner_id=editing.id) }}">
+                    {% else %}
+                    <form method="POST" action="{{ url_for('admin.admin_banners') }}">
+                    {% endif %}
+                        {{ form.hidden_tag() }}
+
+                        <div class="mb-3">
+                            {{ form.title.label(class="form-label fw-semibold") }}
+                            {{ form.title(class="form-control", placeholder="e.g. Under Development") }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.message.label(class="form-label fw-semibold") }}
+                            {{ form.message(class="form-control", rows="3", placeholder="e.g. This site is still in development. Some features may not work as expected.") }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.banner_type.label(class="form-label fw-semibold") }}
+                            {{ form.banner_type(class="form-select") }}
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check form-switch mb-2">
+                                {{ form.is_active(class="form-check-input") }}
+                                {{ form.is_active.label(class="form-check-label fw-semibold") }}
+                            </div>
+                            <div class="form-check form-switch mb-2">
+                                {{ form.show_on_index(class="form-check-input") }}
+                                {{ form.show_on_index.label(class="form-check-label") }}
+                            </div>
+                            <div class="form-check form-switch">
+                                {{ form.show_on_all_pages(class="form-check-input") }}
+                                {{ form.show_on_all_pages.label(class="form-check-label") }}
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            {{ form.submit(class="btn btn-primary") }}
+                            {% if editing is defined and editing %}
+                                <a href="{{ url_for('admin.admin_banners') }}" class="btn btn-outline-secondary">Cancel</a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Existing Banners -->
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header bg-white border-0 pt-3 pb-0">
+                    <h5 class="mb-0"><i class="fas fa-list me-1"></i> All Banners</h5>
+                </div>
+                <div class="card-body">
+                    {% if banners %}
+                        {% for banner in banners %}
+                        <div class="banner-admin-row {% if banner.is_active %}banner-admin-active{% else %}banner-admin-inactive{% endif %}">
+                            <div class="d-flex align-items-start justify-content-between">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <span class="badge bg-{{ banner.banner_type if banner.banner_type != 'development' else 'info' }}">
+                                            {{ banner.banner_type|capitalize }}
+                                        </span>
+                                        {% if banner.is_active %}
+                                            <span class="badge bg-success"><i class="fas fa-check-circle"></i> Active</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary"><i class="fas fa-pause-circle"></i> Inactive</span>
+                                        {% endif %}
+                                        {% if banner.show_on_all_pages %}
+                                            <span class="badge bg-dark"><i class="fas fa-globe"></i> All Pages</span>
+                                        {% elif banner.show_on_index %}
+                                            <span class="badge bg-info text-dark"><i class="fas fa-home"></i> Index Only</span>
+                                        {% endif %}
+                                    </div>
+                                    <h6 class="mb-1">{{ banner.title }}</h6>
+                                    <p class="text-muted small mb-0">{{ banner.message }}</p>
+                                </div>
+                                <div class="d-flex gap-1 ms-2 flex-shrink-0">
+                                    <form method="POST" action="{{ url_for('admin.toggle_banner', banner_id=banner.id) }}" class="d-inline">
+                                        {{ form.hidden_tag() }}
+                                        <button type="submit" class="btn btn-sm {% if banner.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %}" title="{% if banner.is_active %}Deactivate{% else %}Activate{% endif %}">
+                                            <i class="fas {% if banner.is_active %}fa-toggle-on{% else %}fa-toggle-off{% endif %}"></i>
+                                        </button>
+                                    </form>
+                                    <a href="{{ url_for('admin.edit_banner', banner_id=banner.id) }}" class="btn btn-sm btn-outline-primary" title="Edit">
+                                        <i class="fas fa-pen"></i>
+                                    </a>
+                                    <form method="POST" action="{{ url_for('admin.delete_banner', banner_id=banner.id) }}" class="d-inline" onsubmit="return confirm('Delete this banner?')">
+                                        {{ form.hidden_tag() }}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted text-center mb-0"><i class="fas fa-info-circle me-1"></i> No banners yet. Create one above!</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

@@ -3,9 +3,13 @@ from flask import render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from app import db, socketio
 from datetime import datetime, timedelta, date, timezone
-from app.models import User, Message, MealPlan, ActivityPlan
+from app.models import (
+    User, Message, MealPlan, ActivityPlan,
+    Chore, Achievement, PointsLedger, FamilyMembers, HealthLog
+)
 from app.main.forms import EditProfileForm
 from collections import defaultdict
+from sqlalchemy import func
 import calendar as cal_module
 
 
@@ -33,10 +37,76 @@ def dashboard():
         Message.timestamp.desc()
     ).limit(5).all()
 
+    # --- Rewards data ---
+    family = current_user.get_active_family()
+    my_points = 0
+    pending_chores = []
+    leaderboard = []
+    recent_achievements = []
+    if family:
+        my_points = db.session.query(
+            func.coalesce(func.sum(PointsLedger.points), 0)
+        ).filter_by(user_id=current_user.id, family_id=family.id).scalar()
+
+        pending_chores = Chore.query.filter(
+            Chore.family_id == family.id,
+            Chore.status == 'pending',
+            (Chore.assigned_to == current_user.id) | (Chore.assigned_to == None)
+        ).order_by(Chore.due_date.asc().nullslast()).limit(4).all()
+
+        recent_achievements = Achievement.query.filter_by(
+            family_id=family.id
+        ).order_by(Achievement.date_earned.desc()).limit(3).all()
+
+        member_ids = [fm.user_id for fm in FamilyMembers.query.filter_by(family_id=family.id).all()]
+        for uid in member_ids:
+            u = User.query.get(uid)
+            if u:
+                pts = db.session.query(
+                    func.coalesce(func.sum(PointsLedger.points), 0)
+                ).filter_by(user_id=uid, family_id=family.id).scalar()
+                leaderboard.append({'username': u.username, 'points': pts})
+        leaderboard.sort(key=lambda x: x['points'], reverse=True)
+        leaderboard = leaderboard[:5]
+
+    # --- Health data ---
+    health_icon = {'weight': 'fa-weight-scale', 'exercise': 'fa-person-running',
+                   'water': 'fa-droplet', 'sleep': 'fa-bed', 'mood': 'fa-face-smile'}
+    health_color = {'weight': '#E07A5F', 'exercise': '#4CAF82',
+                    'water': '#5B8DEF', 'sleep': '#9B6DD7', 'mood': '#E8A44A'}
+    health_unit = {'weight': 'kg', 'exercise': 'min', 'water': 'L', 'sleep': 'hrs', 'mood': '/5'}
+    health_summaries = {}
+    for cat in ['weight', 'exercise', 'water', 'sleep', 'mood']:
+        latest = HealthLog.query.filter_by(
+            user_id=current_user.id, category=cat
+        ).order_by(HealthLog.date.desc()).first()
+        if latest:
+            prev = HealthLog.query.filter(
+                HealthLog.user_id == current_user.id,
+                HealthLog.category == cat,
+                HealthLog.date < latest.date
+            ).order_by(HealthLog.date.desc()).first()
+            trend = None
+            if prev:
+                diff = latest.value - prev.value
+                trend = 'up' if diff > 0 else ('down' if diff < 0 else 'flat')
+            health_summaries[cat] = {
+                'value': latest.value, 'unit': health_unit[cat],
+                'date': latest.date.strftime('%d %b'), 'trend': trend,
+                'icon': health_icon[cat], 'color': health_color[cat]
+            }
+
     return render_template('main/dashboard.html',
                            upcoming_meals=upcoming_meals,
                            upcoming_activities=upcoming_activities,
-                           recent_messages=recent_messages)
+                           recent_messages=recent_messages,
+                           my_points=my_points,
+                           pending_chores=pending_chores,
+                           leaderboard=leaderboard,
+                           recent_achievements=recent_achievements,
+                           health_summaries=health_summaries,
+                           health_icon=health_icon,
+                           health_color=health_color)
 
 
 @bp.route('/calendar')

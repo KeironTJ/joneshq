@@ -81,7 +81,19 @@ def create_app(config_class=Config):
 
     from app.family_manager import bp as family_manager_bp
     app.register_blueprint(family_manager_bp)
-    
+
+    from app.rewards import bp as rewards_bp
+    app.register_blueprint(rewards_bp)
+
+    from app.health import bp as health_bp
+    app.register_blueprint(health_bp)
+
+    @app.context_processor
+    def inject_site_banners():
+        from app.models import SiteBanner
+        banners = SiteBanner.query.filter_by(is_active=True).order_by(SiteBanner.created_at.desc()).all()
+        return dict(site_banners=banners)
+
     return app
     
 from app import models

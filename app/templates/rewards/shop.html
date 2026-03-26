@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="week-planner-header">
+    <div class="week-nav">
+        <a href="{{ url_for('rewards.rewards_hub') }}" class="week-nav-btn" title="Back to Hub">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div class="week-nav-title">
+            <h1><i class="fas fa-gift me-2"></i>Rewards Shop</h1>
+            <p>Spend your hard-earned points!</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('rewards.redemption_history') }}" class="week-nav-btn position-relative" title="Redemption history">
+                <i class="fas fa-receipt"></i>
+                {% if is_parent and pending_redemptions %}
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.65rem;">{{ pending_redemptions }}</span>
+                {% endif %}
+            </a>
+            {% if is_parent %}
+            <button class="week-nav-btn" data-bs-toggle="modal" data-bs-target="#addRewardModal" title="Add reward">
+                <i class="fas fa-plus"></i>
+            </button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Points balance -->
+<div class="points-banner">
+    <div class="points-banner-inner">
+        <div class="points-banner-label"><i class="fas fa-coins me-1"></i> My Points</div>
+        <div class="points-banner-value">{{ my_points }}</div>
+    </div>
+</div>
+
+{% if rewards %}
+<div class="shop-grid">
+    {% for reward in rewards %}
+    <div class="shop-card {% if not reward.available %}shop-card-unavailable{% endif %}">
+        <div class="shop-card-icon"><i class="fas {{ reward.icon }}"></i></div>
+        <div class="shop-card-body">
+            <strong>{{ reward.title }}</strong>
+            {% if reward.description %}<small>{{ reward.description }}</small>{% endif %}
+        </div>
+        <div class="shop-card-footer">
+            <span class="points-cost">{{ reward.points_cost }} pts</span>
+            <div class="shop-card-actions">
+                {% if reward.available and my_points >= reward.points_cost %}
+                <form method="post" action="{{ url_for('rewards.redeem_reward', id=reward.id) }}" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-rewards" title="Redeem">
+                        <i class="fas fa-cart-shopping me-1"></i> Redeem
+                    </button>
+                </form>
+                {% elif reward.available %}
+                <button class="btn btn-sm btn-outline-secondary" disabled title="Not enough points">
+                    <i class="fas fa-lock me-1"></i> {{ reward.points_cost - my_points }} more
+                </button>
+                {% else %}
+                <span class="badge bg-secondary">Unavailable</span>
+                {% endif %}
+                {% if is_parent %}
+                <form method="post" action="{{ url_for('rewards.delete_reward', id=reward.id) }}" class="d-inline">
+                    <button type="submit" class="chore-delete" title="Delete"><i class="fas fa-times"></i></button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="widget-empty py-5">
+    <i class="fas fa-gift"></i>
+    <p>No rewards set up yet. Create the first one!</p>
+</div>
+{% endif %}
+
+<!-- FAB -->
+{% if is_parent %}
+<button class="fab-add fab-add-rewards d-lg-none" data-bs-toggle="modal" data-bs-target="#addRewardModal" title="Add reward">
+    <i class="fas fa-plus"></i>
+</button>
+{% endif %}
+
+<!-- Add Reward Modal -->
+{% if is_parent %}
+<div class="modal fade" id="addRewardModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header modal-header-rewards">
+                <h5 class="modal-title"><i class="fas fa-gift me-2"></i>Create Reward</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" action="{{ url_for('rewards.rewards_shop') }}">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        <label class="form-label">Title *</label>
+                        {{ form.title(class="form-control", placeholder="e.g. Extra screen time") }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        {{ form.description(class="form-control", rows=2) }}
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Points Cost *</label>
+                            {{ form.points_cost(class="form-control") }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Icon</label>
+                            {{ form.icon(class="form-select") }}
+                        </div>
+                        <div class="col-md-4 mb-3 d-flex align-items-end">
+                            <div class="form-check">
+                                {{ form.available(class="form-check-input") }}
+                                <label class="form-check-label">Available</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-rewards"><i class="fas fa-gift me-1"></i> Create Reward</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

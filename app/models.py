@@ -201,3 +201,129 @@ class ActivityPlan(db.Model):
 
     # Relationships
     user = db.relationship('User', backref='activity_plans', lazy=True)
+
+
+## CHORES
+class Chore(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    family_id = db.Column(db.Integer, db.ForeignKey('family.id'), nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    assigned_to = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    title = db.Column(db.String(128), nullable=False)
+    description = db.Column(db.String(500))
+    points = db.Column(db.Integer, default=0)
+    due_date = db.Column(db.Date, nullable=True)
+    recurring = db.Column(db.String(20), default='none')  # none, daily, weekly, monthly
+    status = db.Column(db.String(20), default='pending')  # pending, awaiting_approval, completed
+    completed_at = db.Column(db.DateTime, nullable=True)
+    completed_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=func.now())
+
+    family = db.relationship('Family', backref='chores')
+    creator = db.relationship('User', foreign_keys=[created_by], backref='created_chores')
+    assignee = db.relationship('User', foreign_keys=[assigned_to], backref='assigned_chores')
+    completer = db.relationship('User', foreign_keys=[completed_by])
+
+
+## ACHIEVEMENTS
+class Achievement(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    family_id = db.Column(db.Integer, db.ForeignKey('family.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    awarded_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    title = db.Column(db.String(128), nullable=False)
+    description = db.Column(db.String(500))
+    icon = db.Column(db.String(50), default='fa-trophy')  # Font Awesome icon class
+    points = db.Column(db.Integer, default=0)
+    date_earned = db.Column(db.DateTime, default=func.now())
+
+    family = db.relationship('Family', backref='achievements')
+    user = db.relationship('User', foreign_keys=[user_id], backref='achievements')
+    awarder = db.relationship('User', foreign_keys=[awarded_by])
+
+
+## REWARDS
+class Reward(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    family_id = db.Column(db.Integer, db.ForeignKey('family.id'), nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    title = db.Column(db.String(128), nullable=False)
+    description = db.Column(db.String(500))
+    points_cost = db.Column(db.Integer, nullable=False)
+    icon = db.Column(db.String(50), default='fa-gift')
+    available = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=func.now())
+
+    family = db.relationship('Family', backref='rewards')
+    creator = db.relationship('User', foreign_keys=[created_by])
+
+
+class RewardRedemption(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    reward_id = db.Column(db.Integer, db.ForeignKey('reward.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    points_spent = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.String(20), default='approved')  # pending, approved, rejected
+    redeemed_at = db.Column(db.DateTime, default=func.now())
+
+    reward = db.relationship('Reward', backref='redemptions')
+    user = db.relationship('User', foreign_keys=[user_id], backref='redemptions')
+
+
+## BEHAVIOUR TRACKING
+class BehaviourEntry(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    family_id = db.Column(db.Integer, db.ForeignKey('family.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    recorded_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    rating = db.Column(db.Integer, nullable=False)  # 1-5 star rating
+    notes = db.Column(db.String(500))
+    points = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=func.now())
+
+    family = db.relationship('Family', backref='behaviour_entries')
+    user = db.relationship('User', foreign_keys=[user_id], backref='behaviour_entries')
+    recorder = db.relationship('User', foreign_keys=[recorded_by])
+
+
+## POINTS LEDGER
+class PointsLedger(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    family_id = db.Column(db.Integer, db.ForeignKey('family.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    points = db.Column(db.Integer, nullable=False)  # positive = earned, negative = spent
+    source_type = db.Column(db.String(30), nullable=False)  # chore, achievement, behaviour, redemption
+    source_id = db.Column(db.Integer, nullable=True)
+    description = db.Column(db.String(200))
+    created_at = db.Column(db.DateTime, default=func.now())
+
+    family = db.relationship('Family', backref='points_ledger')
+    user = db.relationship('User', foreign_keys=[user_id], backref='points_ledger')
+
+
+## HEALTH TRACKING
+class HealthLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    category = db.Column(db.String(30), nullable=False)  # weight, exercise, water, sleep, mood
+    value = db.Column(db.Float, nullable=False)  # e.g. kg, minutes, litres, hours, 1-5
+    unit = db.Column(db.String(20))  # kg, min, L, hrs, rating
+    notes = db.Column(db.String(500))
+    created_at = db.Column(db.DateTime, default=func.now())
+
+    user = db.relationship('User', backref='health_logs')
+
+
+## SITE SETTINGS
+class SiteBanner(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False, default='Site Notice')
+    message = db.Column(db.String(500), nullable=False, default='')
+    banner_type = db.Column(db.String(20), nullable=False, default='info')  # info, warning, success, danger
+    is_active = db.Column(db.Boolean, default=False)
+    show_on_index = db.Column(db.Boolean, default=True)
+    show_on_all_pages = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=func.now())
+    updated_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)

@@ -14,6 +14,28 @@ from app.models import User, Role
 from app import db
 import sqlalchemy as sa
 
+
+## Site Banner
+class SiteBannerForm(FlaskForm):
+    title = StringField('Banner Title', validators=[DataRequired(), Length(max=100)])
+    message = TextAreaField('Banner Message', validators=[DataRequired(), Length(max=500)])
+    banner_type = SelectField(
+        'Banner Style',
+        choices=[
+            ('info', 'Info (Blue)'),
+            ('warning', 'Warning (Yellow)'),
+            ('success', 'Success (Green)'),
+            ('danger', 'Danger (Red)'),
+            ('development', 'Development (Teal)'),
+        ],
+        validators=[DataRequired()],
+    )
+    show_on_index = BooleanField('Show on Index Page')
+    show_on_all_pages = BooleanField('Show on All Pages')
+    is_active = BooleanField('Banner Active')
+    submit = SubmitField('Save Banner')
+
+
 ## MealPlanner
 class AddMealForm(FlaskForm):
     meal_date = DateField(
