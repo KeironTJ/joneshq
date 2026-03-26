@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- Page Header -->
+<div class="page-header-admin">
+    <h1><i class="fa-solid fa-inbox me-2"></i>Contact Messages</h1>
+    <p class="mb-0">Messages submitted via the Help & Contact page.</p>
+</div>
+
+<div class="container">
+    {% if messages %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th style="width:160px">Date</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Subject</th>
+                    <th style="width:80px">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for msg in messages %}
+                <tr>
+                    <td class="text-muted small">{{ msg.created_at.strftime('%d %b %Y %H:%M') }}</td>
+                    <td>{{ msg.name }}</td>
+                    <td><a href="mailto:{{ msg.email }}">{{ msg.email }}</a></td>
+                    <td>
+                        <a class="fw-semibold text-decoration-none" data-bs-toggle="collapse"
+                           href="#msg-{{ msg.id }}" role="button" aria-expanded="false">
+                            {{ msg.subject }}
+                        </a>
+                    </td>
+                    <td>
+                        <form method="post" action="{{ url_for('admin.delete_contact_message', msg_id=msg.id) }}"
+                              onsubmit="return confirm('Delete this message?');" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                <tr class="collapse" id="msg-{{ msg.id }}">
+                    <td colspan="5">
+                        <div class="p-3 bg-light rounded">
+                            {{ msg.message | e | replace('\n', '<br>'|safe) }}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+        <i class="fa-solid fa-inbox fa-3x mb-3 d-block"></i>
+        <p class="mb-0">No contact messages yet.</p>
+    </div>
+    {% endif %}
+
+    <a href="{{ url_for('admin.admin_home') }}" class="btn btn-outline-secondary mt-3">
+        <i class="fa-solid fa-arrow-left me-1"></i>Back to Admin
+    </a>
+</div>
+
+{% endblock %}

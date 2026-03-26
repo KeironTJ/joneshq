@@ -405,6 +405,16 @@ class SiteSetting(db.Model):
         db.session.commit()
 
 
+class ContactMessage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), nullable=False)
+    subject = db.Column(db.String(150), nullable=False)
+    message = db.Column(db.String(2000), nullable=False)
+    created_at = db.Column(db.DateTime, default=func.now())
+    read = db.Column(db.Boolean, default=False)
+
+
 class SiteBanner(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False, default='Site Notice')

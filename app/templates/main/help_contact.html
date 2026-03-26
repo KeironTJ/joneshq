@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- Page Header -->
+<div class="page-header" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark, #2a7a70) 100%);">
+    <h1><i class="fa-solid fa-circle-question me-2"></i>Help & Contact</h1>
+    <p class="mb-0">Find answers or get in touch with us.</p>
+</div>
+
+<div class="container">
+
+    <!-- ===== HELP / FAQ SECTION ===== -->
+    <h3 class="mb-3"><i class="fa-solid fa-lightbulb me-2"></i>Frequently Asked Questions</h3>
+
+    <div class="accordion mb-5" id="faqAccordion">
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                    <i class="fa-solid fa-th-large me-2 text-muted"></i>What is Family HQ?
+                </button>
+            </h2>
+            <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body">
+                    Family HQ is a private family management app that helps your household stay organised.
+                    Plan meals, schedule activities, manage chores &amp; rewards, track health goals, keep
+                    shared to-do lists, and chat together &mdash; all in one place.
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                    <i class="fa-solid fa-users me-2 text-muted"></i>How do I join a family group?
+                </button>
+            </h2>
+            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body">
+                    When you register you can either <strong>create a new family</strong> or
+                    <strong>join an existing one</strong> using an invitation code. The family owner or
+                    co-owner can find the invitation code on the Family Home page.
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                    <i class="fa-solid fa-utensils me-2 text-muted"></i>How does the Meal Planner work?
+                </button>
+            </h2>
+            <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body">
+                    Head to <strong>Meals</strong> from the navigation bar. You can add meals for any
+                    date, include a description and an optional source link (e.g. a recipe URL).
+                    Upcoming meals also appear on the Dashboard and the Calendar.
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+                    <i class="fa-solid fa-trophy me-2 text-muted"></i>How do Rewards &amp; Chores work?
+                </button>
+            </h2>
+            <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body">
+                    Parents (owners / co-owners) can create <strong>chores</strong> and assign point
+                    values. When a family member completes a chore, points are added to their balance.
+                    Points can then be redeemed for <strong>rewards</strong> that parents set up.
+                    There's also a behaviour tracker and an achievements system.
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5">
+                    <i class="fa-solid fa-heartbeat me-2 text-muted"></i>What can I track in Health?
+                </button>
+            </h2>
+            <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body">
+                    The Health dashboard lets you log daily values for categories like exercise, water
+                    intake, sleep, mood, weight, and more. You can customise categories, set daily goals,
+                    and view your progress over time from <strong>Health &gt; Settings</strong>.
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq6">
+                    <i class="fa-solid fa-list-check me-2 text-muted"></i>How do To-Do lists work?
+                </button>
+            </h2>
+            <div id="faq6" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body">
+                    You can create personal lists or family-shared lists. Items can have priorities, due
+                    dates, and can be assigned to specific family members. Items with due dates
+                    automatically show up on the <strong>Calendar</strong>.
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq7">
+                    <i class="fa-solid fa-calendar me-2 text-muted"></i>What appears on the Calendar?
+                </button>
+            </h2>
+            <div id="faq7" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body">
+                    The Calendar combines <strong>meals</strong>, <strong>activities</strong>, and
+                    <strong>to-do items</strong> with due dates into a single month view so the whole
+                    family can see what's coming up at a glance.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== CONTACT SECTION ===== -->
+    <div class="row g-4 mb-5">
+        <div class="col-lg-5">
+            <h3 class="mb-3"><i class="fa-solid fa-envelope me-2"></i>Get In Touch</h3>
+            <p>Have a question, found a bug, or want to suggest a feature? We'd love to hear from you.</p>
+
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h6 class="mb-2"><i class="fa-solid fa-at me-2"></i>Email Us Directly</h6>
+                    <a href="mailto:keirontj@gmail.com" class="fw-semibold">keirontj@gmail.com</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="mb-3"><i class="fa-solid fa-clock me-2"></i>Response Time</h6>
+                    <p class="mb-0 text-muted">We aim to respond to all enquiries within 48 hours.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <h3 class="mb-3"><i class="fa-solid fa-paper-plane me-2"></i>Send a Message</h3>
+
+            {% if submitted %}
+            <div class="alert alert-success">
+                <i class="fa-solid fa-check-circle me-2"></i>
+                Thanks for your message! We'll get back to you as soon as possible.
+            </div>
+            {% endif %}
+
+            <div class="card">
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {{ form.hidden_tag() }}
+                        <div class="mb-3">
+                            {{ form.name.label(class="form-label") }}
+                            {{ form.name(class="form-control", placeholder="Your name") }}
+                            {% for error in form.name.errors %}
+                            <div class="form-text text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.email.label(class="form-label") }}
+                            {{ form.email(class="form-control", placeholder="you@example.com") }}
+                            {% for error in form.email.errors %}
+                            <div class="form-text text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.subject.label(class="form-label") }}
+                            {{ form.subject(class="form-control", placeholder="What is this about?") }}
+                            {% for error in form.subject.errors %}
+                            <div class="form-text text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.message.label(class="form-label") }}
+                            {{ form.message(class="form-control", rows=5, placeholder="Tell us more...") }}
+                            {% for error in form.message.errors %}
+                            <div class="form-text text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="d-grid">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

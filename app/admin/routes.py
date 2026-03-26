@@ -11,6 +11,7 @@ from app.models import (
     ActivityPlan,
     SiteBanner,
     SiteSetting,
+    ContactMessage,
 )
 from flask import render_template, flash, redirect, url_for, request, session, jsonify
 from flask_login import login_required, current_user 
@@ -36,10 +37,12 @@ from app.admin.forms import (
 def admin_home():
     from flask_wtf import FlaskForm
     allow_reg = SiteSetting.get_bool('allow_registration', default=False)
+    unread_count = ContactMessage.query.filter_by(read=False).count()
     return render_template('admin/admin_home.html',
                            title='Admin Home',
                            allow_registration=allow_reg,
-                           toggle_form=FlaskForm())
+                           toggle_form=FlaskForm(),
+                           unread_contact_count=unread_count)
 
 
 @bp.route('/toggle_registration', methods=['POST'])
@@ -445,3 +448,31 @@ def delete_banner(banner_id):
     db.session.commit()
     flash('Banner deleted.', 'success')
     return redirect(url_for('admin.admin_banners'))
+
+
+## CONTACT MESSAGES
+@bp.route('/admin_contact_messages')
+@login_required
+@admin_required
+def admin_contact_messages():
+    messages = ContactMessage.query.order_by(ContactMessage.created_at.desc()).all()
+    # Mark all unread as read on view
+    unread = [m for m in messages if not m.read]
+    for m in unread:
+        m.read = True
+    if unread:
+        db.session.commit()
+    return render_template('admin/admin_contact_messages.html',
+                           title='Contact Messages',
+                           messages=messages)
+
+
+@bp.route('/admin_contact_messages/delete/<int:msg_id>', methods=['POST'])
+@login_required
+@admin_required
+def delete_contact_message(msg_id):
+    msg = ContactMessage.query.get_or_404(msg_id)
+    db.session.delete(msg)
+    db.session.commit()
+    flash('Message deleted.', 'success')
+    return redirect(url_for('admin.admin_contact_messages'))

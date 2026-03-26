@@ -1,14 +1,14 @@
 from app.main import bp
 from flask import render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
-from app import db, socketio
+from app import db, socketio, limiter
 from datetime import datetime, timedelta, date, timezone
 from app.models import (
     User, Message, MealPlan, ActivityPlan,
     Chore, Achievement, PointsLedger, FamilyMembers, HealthLog,
-    TodoList, TodoItem
+    TodoList, TodoItem, ContactMessage
 )
-from app.main.forms import EditProfileForm
+from app.main.forms import EditProfileForm, ContactForm
 from collections import defaultdict
 from sqlalchemy import func
 import calendar as cal_module
@@ -212,6 +212,29 @@ def user_profile(username):
     return render_template('main/user_profile.html', 
                            user=user,
                            form=form)
+
+
+@bp.route('/help', methods=['GET', 'POST'])
+@limiter.limit("5 per hour", methods=["POST"], error_message="Too many messages sent. Please try again later.")
+def help_and_contact():
+    form = ContactForm()
+    submitted = False
+    if form.validate_on_submit():
+        msg = ContactMessage(
+            name=form.name.data.strip(),
+            email=form.email.data.strip(),
+            subject=form.subject.data.strip(),
+            message=form.message.data.strip(),
+        )
+        db.session.add(msg)
+        db.session.commit()
+        flash('Your message has been sent! We\'ll get back to you soon.', 'success')
+        submitted = True
+        form = ContactForm(formdata=None)
+    return render_template('main/help_contact.html',
+                           title='Help & Contact',
+                           form=form,
+                           submitted=submitted)
 
 
 

@@ -153,8 +153,11 @@
 
     <!-- Footer -->
     <footer class="footer-fhq">
-        <div class="container">
+        <div class="container d-flex justify-content-between align-items-center flex-wrap">
             <span>&copy; {{ now().year if now is defined else '2026' }} Family HQ &mdash; Keeping families connected.</span>
+            <a href="{{ url_for('main.help_and_contact') }}" class="text-decoration-none" style="opacity:.85">
+                <i class="fas fa-circle-question me-1"></i>Help & Contact
+            </a>
         </div>
     </footer>
 

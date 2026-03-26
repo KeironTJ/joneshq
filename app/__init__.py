@@ -8,12 +8,14 @@ from flask_login import LoginManager
 from flask_socketio import SocketIO
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_wtf.csrf import CSRFProtect
 
 
 db = SQLAlchemy()
 migrate = Migrate()
 login = LoginManager()
 login.login_view = 'auth.login'
+csrf = CSRFProtect()
 
 
 def _parse_socket_origins():
@@ -56,6 +58,7 @@ def create_app(config_class=Config):
     db.init_app(app)
     migrate.init_app(app, db)
     login.init_app(app)
+    csrf.init_app(app)
     app.config.setdefault('RATELIMIT_HEADERS_ENABLED', True)
     limiter.init_app(app)
     socketio.init_app(app, async_mode="eventlet")
