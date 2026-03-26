@@ -26,6 +26,7 @@
 <div class="cal-legend">
     <span class="cal-legend-item"><span class="cal-legend-dot cal-legend-dot-meal"></span> Meals</span>
     <span class="cal-legend-item"><span class="cal-legend-dot cal-legend-dot-activity"></span> Activities</span>
+    <span class="cal-legend-item"><span class="cal-legend-dot cal-legend-dot-todo"></span> To-Dos</span>
 </div>
 
 <!-- Calendar Grid -->
@@ -44,10 +45,11 @@
         {% for day in week %}
         {% set day_meals = meals_by_day.get(day, []) %}
         {% set day_activities = activities_by_day.get(day, []) %}
+        {% set day_todos = todos_by_day.get(day, []) %}
         <div class="cal-day {% if day == today %}cal-day-today{% endif %}{% if day.month != target_month %} cal-day-outside{% endif %}">
             <div class="cal-day-num">{{ day.day }}</div>
 
-            {% if day_meals or day_activities %}
+            {% if day_meals or day_activities or day_todos %}
             <div class="cal-day-events">
                 {% for meal in day_meals[:2] %}
                 <a href="{{ url_for('meal_planner.meal_details', meal_id=meal.id) }}" 
@@ -61,9 +63,18 @@
                     <i class="fas fa-calendar-alt"></i> {{ act.activity_title|truncate(12) }}
                 </a>
                 {% endfor %}
-                {% set total = day_meals|length + day_activities|length %}
-                {% if total > 4 %}
-                <span class="cal-more">+{{ total - 4 }} more</span>
+                {% for item in day_todos[:2] %}
+                {% set tlst = list_map.get(item.list_id) %}
+                <a href="{{ url_for('todos.todo_hub', list=item.list_id) }}"
+                   class="cal-event-chip cal-event-todo {% if item.completed %}cal-todo-done{% endif %}"
+                   title="{{ item.title }}{% if tlst %} ({{ tlst.title }}){% endif %}"
+                   {% if tlst %}style="border-left: 2px solid {{ tlst.color }}"{% endif %}>
+                    <i class="fas {% if item.completed %}fa-check-circle{% else %}fa-circle-dot{% endif %}"></i> {{ item.title|truncate(12) }}
+                </a>
+                {% endfor %}
+                {% set total = day_meals|length + day_activities|length + day_todos|length %}
+                {% if total > 6 %}
+                <span class="cal-more">+{{ total - 6 }} more</span>
                 {% endif %}
             </div>
             {% endif %}

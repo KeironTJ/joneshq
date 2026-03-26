@@ -5,7 +5,8 @@ from app import db, socketio
 from datetime import datetime, timedelta, date, timezone
 from app.models import (
     User, Message, MealPlan, ActivityPlan,
-    Chore, Achievement, PointsLedger, FamilyMembers, HealthLog
+    Chore, Achievement, PointsLedger, FamilyMembers, HealthLog,
+    TodoList, TodoItem
 )
 from app.main.forms import EditProfileForm
 from collections import defaultdict
@@ -155,11 +156,37 @@ def master_calendar():
             activities_by_day[d].append(act)
             d += timedelta(days=1)
 
+    # --- To-Do items with due dates ---
+    from sqlalchemy import or_, and_
+    family = current_user.get_active_family()
+    list_conditions = [TodoList.user_id == current_user.id]
+    if family:
+        list_conditions.append(
+            and_(TodoList.family_id == family.id, TodoList.family_id.isnot(None))
+        )
+    my_lists = TodoList.query.filter(or_(*list_conditions)).all()
+    list_ids = [l.id for l in my_lists]
+    list_map = {l.id: l for l in my_lists}
+
+    todo_items = []
+    if list_ids:
+        todo_items = TodoItem.query.filter(
+            TodoItem.list_id.in_(list_ids),
+            TodoItem.due_date >= first_day,
+            TodoItem.due_date <= last_day,
+        ).all()
+
+    todos_by_day = defaultdict(list)
+    for item in todo_items:
+        todos_by_day[item.due_date].append(item)
+
     return render_template('main/calendar.html',
                            title='Family Calendar',
                            month_days=month_days,
                            meals_by_day=meals_by_day,
                            activities_by_day=activities_by_day,
+                           todos_by_day=todos_by_day,
+                           list_map=list_map,
                            today=today,
                            target_year=target_year,
                            target_month=target_month,

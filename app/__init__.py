@@ -88,6 +88,9 @@ def create_app(config_class=Config):
     from app.health import bp as health_bp
     app.register_blueprint(health_bp)
 
+    from app.todos import bp as todos_bp
+    app.register_blueprint(todos_bp)
+
     @app.context_processor
     def inject_site_banners():
         from app.models import SiteBanner

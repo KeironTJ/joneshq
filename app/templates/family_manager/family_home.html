@@ -17,13 +17,18 @@
     }
 </script>
 
+{% set my_fm = current_user.family_members | selectattr('family_id', 'equalto', family.id) | first %}
+{% set is_owner = my_fm and my_fm.role_in_family == 'owner' %}
+{% set is_co_owner = my_fm and my_fm.role_in_family == 'co-owner' %}
+{% set can_manage = is_owner or is_co_owner %}
+
 <div class="page-header page-header-family">
     <h1><i class="fas fa-users me-2"></i>{{ family.name }}</h1>
     <p>Your family members and invite code</p>
 </div>
 
 <div class="row justify-content-center">
-    <div class="col-md-7 col-lg-6">
+    <div class="col-md-8 col-lg-7">
         <div class="card profile-card mb-4">
             <div class="card-header" style="background:var(--family-color);">
                 <h3 style="color:#fff;margin:0;"><i class="fas fa-user-friends me-2"></i>Members</h3>
@@ -35,16 +40,61 @@
                             <tr>
                                 <th style="background:var(--family-color);">Member Name</th>
                                 <th style="background:var(--family-color);">Role</th>
+                                {% if can_manage %}
+                                <th style="background:var(--family-color);">Actions</th>
+                                {% endif %}
                             </tr>
                         </thead>
                         <tbody>
                             {% for member in family.members %}
+                            {% set fm = member.family_members | selectattr('family_id', 'equalto', family.id) | first %}
                             <tr>
-                                <td>{{ member.username }}</td>
                                 <td>
-                                    {% set fm = member.family_members | selectattr('family_id', 'equalto', family.id) | first %}
-                                    {{ fm.role_in_family if fm }}
+                                    {{ member.username }}
+                                    {% if member.id == current_user.id %}<span class="badge bg-light text-muted ms-1">You</span>{% endif %}
                                 </td>
+                                <td>
+                                    {% if fm %}
+                                        {% if fm.role_in_family == 'owner' %}
+                                            <span class="badge bg-warning text-dark"><i class="fas fa-crown me-1"></i>Owner</span>
+                                        {% elif fm.role_in_family == 'co-owner' %}
+                                            <span class="badge bg-info text-dark"><i class="fas fa-user-shield me-1"></i>Co-Owner</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary"><i class="fas fa-user me-1"></i>Member</span>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                                {% if can_manage %}
+                                <td>
+                                    {% if member.id != current_user.id and fm and fm.role_in_family != 'owner' %}
+                                        {# Role change dropdown #}
+                                        {% set can_change = is_owner or (is_co_owner and fm.role_in_family == 'member') %}
+                                        {% if can_change %}
+                                        <div class="d-flex gap-1 flex-wrap">
+                                            <form method="POST" action="{{ url_for('family_manager.change_role', family_name=family_name, member_id=member.id) }}" class="d-inline">
+                                                <select name="role" class="form-select form-select-sm d-inline-block" style="width:auto;" onchange="this.form.submit()">
+                                                    <option value="" disabled selected>Change role…</option>
+                                                    {% if fm.role_in_family != 'member' %}
+                                                    <option value="member">Member</option>
+                                                    {% endif %}
+                                                    {% if fm.role_in_family != 'co-owner' %}
+                                                    <option value="co-owner">Co-Owner</option>
+                                                    {% endif %}
+                                                    {% if is_owner and fm.role_in_family != 'owner' %}
+                                                    <option value="owner">Transfer Ownership</option>
+                                                    {% endif %}
+                                                </select>
+                                            </form>
+                                            <form method="POST" action="{{ url_for('family_manager.remove_member', family_name=family_name, member_id=member.id) }}" class="d-inline" onsubmit="return confirm('Remove {{ member.username }} from this family?')">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Remove member"><i class="fas fa-user-minus"></i></button>
+                                            </form>
+                                        </div>
+                                        {% endif %}
+                                    {% elif fm and fm.role_in_family == 'owner' %}
+                                        <span class="text-muted" style="font-size:0.78rem;">—</span>
+                                    {% endif %}
+                                </td>
+                                {% endif %}
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -59,9 +109,6 @@
                 <span id="inviteCode" class="invite-code">{{ family.invitation_code }}</span>
                 <button class="btn btn-sm btn-outline-primary ms-2" onclick="copyInviteCode()"><i class="fas fa-copy me-1"></i>Copy</button>
             </div>
-        </div>
-    </div>
-</div>
         </div>
     </div>
 </div>

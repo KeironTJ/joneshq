@@ -335,6 +335,46 @@ class HealthLog(db.Model):
     user = db.relationship('User', backref='health_logs')
 
 
+## TO-DO LISTS
+class TodoList(db.Model):
+    """A named to-do list owned by a user, optionally shared with a family."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    family_id = db.Column(db.Integer, db.ForeignKey('family.id'), nullable=True)
+    title = db.Column(db.String(128), nullable=False, default='My List')
+    color = db.Column(db.String(20), default='#3A8F85')
+    icon = db.Column(db.String(50), default='fa-list-check')
+    created_at = db.Column(db.DateTime, default=func.now())
+
+    owner = db.relationship('User', backref='todo_lists')
+    family = db.relationship('Family', backref='todo_lists')
+    items = db.relationship('TodoItem', backref='todo_list', lazy='dynamic',
+                            cascade='all, delete-orphan',
+                            order_by='TodoItem.sort_order, TodoItem.created_at')
+
+
+class TodoItem(db.Model):
+    """A single to-do item within a list."""
+    id = db.Column(db.Integer, primary_key=True)
+    list_id = db.Column(db.Integer, db.ForeignKey('todo_list.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    title = db.Column(db.String(256), nullable=False)
+    notes = db.Column(db.String(1000))
+    priority = db.Column(db.String(10), default='medium')  # low, medium, high, urgent
+    due_date = db.Column(db.Date, nullable=True)
+    due_time = db.Column(db.Time, nullable=True)
+    completed = db.Column(db.Boolean, default=False)
+    completed_at = db.Column(db.DateTime, nullable=True)
+    completed_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    assigned_to = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    sort_order = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=func.now())
+
+    creator = db.relationship('User', foreign_keys=[user_id], backref='created_todos')
+    assignee = db.relationship('User', foreign_keys=[assigned_to], backref='assigned_todos')
+    completer = db.relationship('User', foreign_keys=[completed_by])
+
+
 ## SITE SETTINGS
 class SiteBanner(db.Model):
     id = db.Column(db.Integer, primary_key=True)

@@ -53,6 +53,9 @@
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint and 'health' in request.endpoint %}active{% endif %}" href="{{ url_for('health.health_dashboard') }}"><i class="fas fa-heartbeat"></i> Health</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint and 'todos' in request.endpoint %}active{% endif %}" href="{{ url_for('todos.todo_hub') }}"><i class="fas fa-list-check"></i> To-Do</a>
+                    </li>
                 </ul>
                 <ul class="navbar-nav mb-2 mb-lg-0">
                     {% if current_user.is_anonymous %}

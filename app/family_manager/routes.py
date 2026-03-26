@@ -64,3 +64,97 @@ def create_or_join_family_view():
     return render_template('family_manager/create_or_join_family_view.html', 
                            title='Create or Join Family', 
                            form=form)
+
+
+@bp.route('/family_home/<family_name>/change_role/<int:member_id>', methods=['POST'])
+@login_required
+@active_family_required
+def change_role(family_name, member_id):
+    family = Family.query.filter_by(name=family_name).first_or_404()
+
+    # Check caller is owner or co-owner
+    caller_fm = FamilyMembers.query.filter_by(
+        user_id=current_user.id, family_id=family.id
+    ).first()
+    if not caller_fm or caller_fm.role_in_family not in ('owner', 'co-owner'):
+        flash('Only owners and co-owners can change roles.', 'danger')
+        return redirect(url_for('family_manager.family_home', family_name=family_name))
+
+    target_fm = FamilyMembers.query.filter_by(
+        user_id=member_id, family_id=family.id
+    ).first_or_404()
+
+    new_role = request.form.get('role', '').strip().lower()
+    allowed_roles = ['member', 'co-owner']
+
+    # Only the owner can promote someone to owner (transfers ownership)
+    if new_role == 'owner' and caller_fm.role_in_family == 'owner':
+        # Transfer ownership
+        caller_fm.role_in_family = 'co-owner'
+        target_fm.role_in_family = 'owner'
+        family.owner_id = member_id
+        db.session.commit()
+        flash(f'Ownership transferred to {target_fm.user.username}.', 'success')
+        return redirect(url_for('family_manager.family_home', family_name=family_name))
+
+    if new_role not in allowed_roles:
+        flash('Invalid role.', 'danger')
+        return redirect(url_for('family_manager.family_home', family_name=family_name))
+
+    # Cannot change the owner's role (must use transfer above)
+    if target_fm.role_in_family == 'owner':
+        flash('Cannot change the owner\'s role. Transfer ownership instead.', 'warning')
+        return redirect(url_for('family_manager.family_home', family_name=family_name))
+
+    # Co-owners cannot change other co-owners
+    if caller_fm.role_in_family == 'co-owner' and target_fm.role_in_family == 'co-owner':
+        flash('Co-owners cannot change other co-owners\' roles.', 'warning')
+        return redirect(url_for('family_manager.family_home', family_name=family_name))
+
+    target_fm.role_in_family = new_role
+    db.session.commit()
+    flash(f'{target_fm.user.username}\'s role changed to {new_role}.', 'success')
+    return redirect(url_for('family_manager.family_home', family_name=family_name))
+
+
+@bp.route('/family_home/<family_name>/remove_member/<int:member_id>', methods=['POST'])
+@login_required
+@active_family_required
+def remove_member(family_name, member_id):
+    family = Family.query.filter_by(name=family_name).first_or_404()
+
+    caller_fm = FamilyMembers.query.filter_by(
+        user_id=current_user.id, family_id=family.id
+    ).first()
+    if not caller_fm or caller_fm.role_in_family not in ('owner', 'co-owner'):
+        flash('Only owners and co-owners can remove members.', 'danger')
+        return redirect(url_for('family_manager.family_home', family_name=family_name))
+
+    if member_id == current_user.id:
+        flash('You cannot remove yourself.', 'warning')
+        return redirect(url_for('family_manager.family_home', family_name=family_name))
+
+    target_fm = FamilyMembers.query.filter_by(
+        user_id=member_id, family_id=family.id
+    ).first_or_404()
+
+    # Cannot remove the owner
+    if target_fm.role_in_family == 'owner':
+        flash('Cannot remove the family owner.', 'danger')
+        return redirect(url_for('family_manager.family_home', family_name=family_name))
+
+    # Co-owners cannot remove other co-owners
+    if caller_fm.role_in_family == 'co-owner' and target_fm.role_in_family == 'co-owner':
+        flash('Co-owners cannot remove other co-owners.', 'warning')
+        return redirect(url_for('family_manager.family_home', family_name=family_name))
+
+    username = target_fm.user.username
+    # Clear active family if it was this one
+    target_user = User.query.get(member_id)
+    if target_user and target_user.active_family_id == family.id:
+        target_user.active_family_id = None
+
+    db.session.delete(target_fm)
+    db.session.commit()
+    flash(f'{username} has been removed from the family.', 'info')
+    return redirect(url_for('family_manager.family_home', family_name=family_name))

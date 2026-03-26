@@ -1,0 +1,352 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="week-planner-header">
+    <div class="week-nav">
+        <div class="week-nav-title">
+            <h1><i class="fas fa-list-check me-2"></i>To-Do Lists</h1>
+            <p>Stay on top of your tasks.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="week-nav-btn" data-bs-toggle="modal" data-bs-target="#newListModal" title="New list">
+                <i class="fas fa-folder-plus"></i>
+            </button>
+            <button class="week-nav-btn" data-bs-toggle="modal" data-bs-target="#addItemModal" title="Add task">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Stats bar -->
+<div class="todo-stats-bar">
+    <div class="todo-stat">
+        <span class="todo-stat-num">{{ stats.total }}</span>
+        <span class="todo-stat-label">Total</span>
+    </div>
+    <div class="todo-stat">
+        <span class="todo-stat-num text-success">{{ stats.done }}</span>
+        <span class="todo-stat-label">Done</span>
+    </div>
+    <div class="todo-stat">
+        <span class="todo-stat-num text-danger">{{ stats.overdue }}</span>
+        <span class="todo-stat-label">Overdue</span>
+    </div>
+    <div class="todo-stat">
+        <span class="todo-stat-num text-primary">{{ stats.due_today }}</span>
+        <span class="todo-stat-label">Today</span>
+    </div>
+    <div class="todo-stat">
+        <span class="todo-stat-num" style="color:var(--activity-color)">{{ stats.upcoming_7 }}</span>
+        <span class="todo-stat-label">This Week</span>
+    </div>
+    {% if stats.total > 0 %}
+    <div class="todo-stat">
+        <div class="todo-progress-ring" style="--pct: {{ (stats.done / stats.total * 100)|round }}">
+            <span>{{ (stats.done / stats.total * 100)|round|int }}%</span>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- List tabs -->
+<div class="todo-list-tabs">
+    {% for lst in lists %}
+    <a href="{{ url_for('todos.todo_hub', list=lst.id) }}"
+       class="todo-list-tab {% if lst.id == active_list.id %}active{% endif %}"
+       style="{% if lst.id == active_list.id %}border-color: {{ lst.color }}; color: {{ lst.color }}{% endif %}">
+        <i class="fas {{ lst.icon }} me-1"></i>{{ lst.title }}
+        <span class="todo-tab-count">{{ lst.items.filter_by(completed=False).count() }}</span>
+        {% if lst.family_id %}<i class="fas fa-users ms-1" style="font-size:0.6rem;" title="Shared"></i>{% endif %}
+    </a>
+    {% endfor %}
+    <button class="todo-list-tab todo-list-tab-add" data-bs-toggle="modal" data-bs-target="#newListModal" title="New list">
+        <i class="fas fa-plus"></i>
+    </button>
+</div>
+
+<!-- Active list header -->
+<div class="todo-active-header" style="border-left: 3px solid {{ active_list.color }}">
+    <div class="todo-active-title">
+        <i class="fas {{ active_list.icon }}" style="color: {{ active_list.color }}"></i>
+        <strong>{{ active_list.title }}</strong>
+        {% if active_list.family_id %}<span class="badge bg-light text-muted ms-1" style="font-size:0.65rem"><i class="fas fa-users me-1"></i>Shared</span>{% endif %}
+    </div>
+    <div class="d-flex gap-1">
+        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editListModal" title="Edit list">
+            <i class="fas fa-pen"></i>
+        </button>
+        {% if active_list.user_id == current_user.id %}
+        <form method="POST" action="{{ url_for('todos.delete_list', id=active_list.id) }}" class="d-inline" onsubmit="return confirm('Delete this list and all its tasks?')">
+            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete list"><i class="fas fa-trash"></i></button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="view-toggle-bar mb-3">
+    <div class="view-toggle">
+        <a href="{{ url_for('todos.todo_hub', list=active_list.id, filter='active') }}" class="view-toggle-btn {% if filt == 'active' %}active{% endif %}">Active</a>
+        <a href="{{ url_for('todos.todo_hub', list=active_list.id, filter='all') }}" class="view-toggle-btn {% if filt == 'all' %}active{% endif %}">All</a>
+        <a href="{{ url_for('todos.todo_hub', list=active_list.id, filter='today') }}" class="view-toggle-btn {% if filt == 'today' %}active{% endif %}">
+            Today{% if stats.due_today %} <span class="badge bg-primary">{{ stats.due_today }}</span>{% endif %}
+        </a>
+        <a href="{{ url_for('todos.todo_hub', list=active_list.id, filter='overdue') }}" class="view-toggle-btn {% if filt == 'overdue' %}active{% endif %}">
+            Overdue{% if stats.overdue %} <span class="badge bg-danger">{{ stats.overdue }}</span>{% endif %}
+        </a>
+        <a href="{{ url_for('todos.todo_hub', list=active_list.id, filter='completed') }}" class="view-toggle-btn {% if filt == 'completed' %}active{% endif %}">Completed</a>
+    </div>
+</div>
+
+<!-- Task list -->
+<div class="todo-items-wrap">
+    {% if items %}
+        {% for item in items %}
+        <div class="todo-item {% if item.completed %}todo-item-done{% endif %} todo-priority-{{ item.priority }}">
+            <form method="POST" action="{{ url_for('todos.toggle_item', id=item.id) }}" class="d-inline todo-check-form">
+                <button type="submit" class="todo-check {% if item.completed %}todo-checked{% endif %}" style="--check-color: {{ active_list.color }}">
+                    {% if item.completed %}<i class="fas fa-check"></i>{% endif %}
+                </button>
+            </form>
+            <div class="todo-item-body">
+                <div class="todo-item-title">{{ item.title }}</div>
+                <div class="todo-item-meta">
+                    {% if item.priority == 'urgent' %}<span class="badge bg-danger">Urgent</span>
+                    {% elif item.priority == 'high' %}<span class="badge bg-warning text-dark">High</span>{% endif %}
+                    {% if item.due_date %}
+                        <span class="todo-due {% if not item.completed and item.due_date < today %}todo-overdue{% elif item.due_date == today %}todo-due-today{% endif %}">
+                            <i class="fas fa-calendar-day me-1"></i>
+                            {% if item.due_date == today %}Today
+                            {% elif item.due_date == tomorrow %}Tomorrow
+                            {% else %}{{ item.due_date.strftime('%d %b') }}{% endif %}
+                            {% if item.due_time %} {{ item.due_time.strftime('%H:%M') }}{% endif %}
+                        </span>
+                    {% endif %}
+                    {% if item.assignee and item.assignee.id != current_user.id %}
+                        <span class="todo-assigned"><i class="fas fa-user me-1"></i>{{ item.assignee.username }}</span>
+                    {% endif %}
+                    {% if item.notes %}<span class="todo-has-notes" title="{{ item.notes[:100] }}"><i class="fas fa-sticky-note"></i></span>{% endif %}
+                    {% if item.completed and item.completer %}
+                        <span class="text-muted" style="font-size:0.7rem"><i class="fas fa-check-double me-1"></i>{{ item.completer.username }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="todo-item-actions">
+                <button class="btn btn-sm btn-link text-muted" data-bs-toggle="modal" data-bs-target="#editItem{{ item.id }}" title="Edit"><i class="fas fa-pen"></i></button>
+                <form method="POST" action="{{ url_for('todos.delete_item', id=item.id) }}" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-link text-danger" title="Delete"><i class="fas fa-times"></i></button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Edit Item Modal -->
+        <div class="modal fade" id="editItem{{ item.id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header modal-header-todo">
+                        <h5 class="modal-title"><i class="fas fa-pen me-2"></i>Edit Task</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form method="POST" action="{{ url_for('todos.edit_item', id=item.id) }}">
+                            <div class="mb-3">
+                                <label class="form-label">Task *</label>
+                                <input type="text" name="title" class="form-control" value="{{ item.title }}" required maxlength="256">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Notes</label>
+                                <textarea name="notes" class="form-control" rows="2" maxlength="1000">{{ item.notes or '' }}</textarea>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Priority</label>
+                                    <select name="priority" class="form-select">
+                                        {% for val, label in [('low','Low'),('medium','Medium'),('high','High'),('urgent','Urgent')] %}
+                                        <option value="{{ val }}" {% if item.priority == val %}selected{% endif %}>{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Due Date</label>
+                                    <input type="date" name="due_date" class="form-control" value="{{ item.due_date.isoformat() if item.due_date else '' }}">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Due Time</label>
+                                    <input type="time" name="due_time" class="form-control" value="{{ item.due_time.strftime('%H:%M') if item.due_time else '' }}">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Assign To</label>
+                                <select name="assigned_to" class="form-select">
+                                    {% for uid, uname in item_form.assigned_to.choices %}
+                                    <option value="{{ uid }}" {% if item.assigned_to == uid %}selected{% endif %}>{{ uname }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-todo"><i class="fas fa-save me-1"></i> Save Changes</button>
+                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="widget-empty py-5">
+            <i class="fas fa-clipboard-check"></i>
+            <p>
+                {% if filt == 'completed' %}No completed tasks yet.
+                {% elif filt == 'overdue' %}No overdue tasks. Nice!
+                {% elif filt == 'today' %}Nothing due today.
+                {% else %}This list is empty. Add your first task!
+                {% endif %}
+            </p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- FAB -->
+<button class="fab-add fab-add-todo d-lg-none" data-bs-toggle="modal" data-bs-target="#addItemModal" title="Add task">
+    <i class="fas fa-plus"></i>
+</button>
+
+<!-- Add Item Modal -->
+<div class="modal fade" id="addItemModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header modal-header-todo">
+                <h5 class="modal-title"><i class="fas fa-plus me-2"></i>Add Task</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" action="{{ url_for('todos.create_item') }}">
+                    {{ item_form.hidden_tag() }}
+                    <input type="hidden" name="list_id" value="{{ active_list.id }}">
+                    <div class="mb-3">
+                        <label class="form-label">Task *</label>
+                        {{ item_form.title(class="form-control", placeholder="What needs doing?") }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        {{ item_form.notes(class="form-control", rows=2, placeholder="Any extra details...") }}
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Priority</label>
+                            {{ item_form.priority(class="form-select") }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Due Date</label>
+                            {{ item_form.due_date(class="form-control") }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Due Time</label>
+                            {{ item_form.due_time(class="form-control") }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Assign To</label>
+                        {{ item_form.assigned_to(class="form-select") }}
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-todo"><i class="fas fa-plus me-1"></i> Add Task</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New List Modal -->
+<div class="modal fade" id="newListModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header modal-header-todo">
+                <h5 class="modal-title"><i class="fas fa-folder-plus me-2"></i>New List</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" action="{{ url_for('todos.create_list') }}">
+                    {{ list_form.hidden_tag() }}
+                    <div class="mb-3">
+                        <label class="form-label">List Name *</label>
+                        {{ list_form.title(class="form-control", placeholder="e.g. Shopping, Work, School...") }}
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Icon</label>
+                            {{ list_form.icon(class="form-select") }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Colour</label>
+                            {{ list_form.color(class="form-select") }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Visibility</label>
+                            {{ list_form.shared(class="form-select") }}
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-todo"><i class="fas fa-plus me-1"></i> Create List</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit List Modal -->
+<div class="modal fade" id="editListModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header modal-header-todo">
+                <h5 class="modal-title"><i class="fas fa-pen me-2"></i>Edit List</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" action="{{ url_for('todos.edit_list', id=active_list.id) }}">
+                    <div class="mb-3">
+                        <label class="form-label">List Name *</label>
+                        <input type="text" name="title" class="form-control" value="{{ active_list.title }}" required maxlength="128">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Icon</label>
+                            <select name="icon" class="form-select">
+                                {% for val, label in list_form.icon.choices %}
+                                <option value="{{ val }}" {% if active_list.icon == val %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Colour</label>
+                            <select name="color" class="form-select">
+                                {% for val, label in list_form.color.choices %}
+                                <option value="{{ val }}" {% if active_list.color == val %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Visibility</label>
+                            <select name="shared" class="form-select">
+                                <option value="personal" {% if not active_list.family_id %}selected{% endif %}>Just me</option>
+                                <option value="family" {% if active_list.family_id %}selected{% endif %}>Shared with family</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-todo"><i class="fas fa-save me-1"></i> Save Changes</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
