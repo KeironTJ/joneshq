@@ -66,6 +66,38 @@
             </a>
         </div>
     </div>
+
+    <!-- Site Settings -->
+    <h3 class="mt-5 mb-3"><i class="fa-solid fa-sliders me-2"></i>Site Settings</h3>
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="feature-card-admin h-100">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="icon-circle mb-2" style="background: var(--admin-color);">
+                            <i class="fa-solid fa-user-plus"></i>
+                        </div>
+                        <h5 class="mb-1">User Registration</h5>
+                        <p class="text-muted mb-0">
+                            {% if allow_registration %}
+                                <span class="badge bg-success">Open</span> New users can sign up
+                            {% else %}
+                                <span class="badge bg-secondary">Closed</span> Sign-ups are disabled
+                            {% endif %}
+                        </p>
+                    </div>
+                    <form method="post" action="{{ url_for('admin.toggle_registration') }}">
+                        {{ toggle_form.hidden_tag() }}
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch"
+                                   id="regToggle" {{ 'checked' if allow_registration }}
+                                   onchange="this.form.submit()">
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 {% endblock %}

@@ -10,6 +10,7 @@ from app.models import (
     FamilyMembers,
     ActivityPlan,
     SiteBanner,
+    SiteSetting,
 )
 from flask import render_template, flash, redirect, url_for, request, session, jsonify
 from flask_login import login_required, current_user 
@@ -33,9 +34,23 @@ from app.admin.forms import (
 @login_required
 @admin_required
 def admin_home():
-
+    from flask_wtf import FlaskForm
+    allow_reg = SiteSetting.get_bool('allow_registration', default=False)
     return render_template('admin/admin_home.html',
-                           title='Admin Home')
+                           title='Admin Home',
+                           allow_registration=allow_reg,
+                           toggle_form=FlaskForm())
+
+
+@bp.route('/toggle_registration', methods=['POST'])
+@login_required
+@admin_required
+def toggle_registration():
+    current = SiteSetting.get_bool('allow_registration', default=False)
+    SiteSetting.set('allow_registration', str(not current).lower())
+    state = 'enabled' if not current else 'disabled'
+    flash(f'User registration {state}.', 'success')
+    return redirect(url_for('admin.admin_home'))
 
 # Displays the error page when a user is not an admin
 @bp.route('/not_admin')

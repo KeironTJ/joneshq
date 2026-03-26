@@ -376,6 +376,35 @@ class TodoItem(db.Model):
 
 
 ## SITE SETTINGS
+class SiteSetting(db.Model):
+    """Key-value store for site-wide configuration flags."""
+    key = db.Column(db.String(64), primary_key=True)
+    value = db.Column(db.String(256), nullable=False, default='')
+    updated_at = db.Column(db.DateTime, default=func.now(), onupdate=func.now())
+
+    @staticmethod
+    def get(key, default=None):
+        row = db.session.get(SiteSetting, key)
+        return row.value if row else default
+
+    @staticmethod
+    def get_bool(key, default=False):
+        val = SiteSetting.get(key)
+        if val is None:
+            return default
+        return val.lower() in ('1', 'true', 'yes', 'on')
+
+    @staticmethod
+    def set(key, value):
+        row = db.session.get(SiteSetting, key)
+        if row:
+            row.value = str(value)
+        else:
+            row = SiteSetting(key=key, value=str(value))
+            db.session.add(row)
+        db.session.commit()
+
+
 class SiteBanner(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False, default='Site Notice')

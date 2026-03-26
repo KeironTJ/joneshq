@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 from app import db, limiter
 from app.auth.forms import LoginForm, RegistrationForm
-from app.models import User, UserRoles, Family, FamilyMembers
+from app.models import User, UserRoles, Family, FamilyMembers, SiteSetting
 from flask import render_template, redirect, url_for, flash, request, current_app
 from flask_login import current_user, login_user, logout_user 
 import sqlalchemy as sa 
@@ -86,7 +86,7 @@ def logout():
 def register():
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
-    if not current_app.config.get('ALLOW_REGISTRATION', False):
+    if not SiteSetting.get_bool('allow_registration', default=current_app.config.get('ALLOW_REGISTRATION', False)):
         flash('Self-service signups are currently disabled.')
         return redirect(url_for('auth.login'))
     
